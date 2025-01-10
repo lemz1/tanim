@@ -1,0 +1,3 @@
+[submodule "vnd/webgpu"]
+	path = vnd/webgpu
+	url = https://github.com/lemz1/WebGPU-Dawn-Binaries.git
