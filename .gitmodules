@@ -4,6 +4,4 @@
 [submodule "vnd/glfw"]
 	path = vnd/glfw
 	url = https://github.com/glfw/glfw.git
-[submodule "vnd/glfw3webgpu"]
-	path = vnd/glfw3webgpu
-	url = https://github.com/eliemichel/glfw3webgpu.git
+
