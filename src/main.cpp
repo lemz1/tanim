@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-#include "platform/glfw_webgpu_surface.h"
+#include "platform/glfw_wgpu_surface.h"
 
 int main()
 {
@@ -121,6 +121,8 @@ int main()
     UINT64_MAX
   );
 
+  auto queue = device.GetQueue();
+
   auto surface = platform::glfwCreateWGPUSurface(instance, window);
   if (!surface)
   {
@@ -128,8 +130,64 @@ int main()
     return 1;
   }
 
+  wgpu::SurfaceConfiguration surfaceConfig{};
+  surfaceConfig.device = device;
+  surfaceConfig.width = 1280;
+  surfaceConfig.height = 720;
+  surfaceConfig.format = wgpu::TextureFormat::BGRA8Unorm;
+  surfaceConfig.usage = wgpu::TextureUsage::RenderAttachment;
+  surfaceConfig.presentMode = wgpu::PresentMode::Fifo;
+  surfaceConfig.alphaMode = wgpu::CompositeAlphaMode::Auto;
+  surface.Configure(&surfaceConfig);
+
   while (!glfwWindowShouldClose(window))
   {
     glfwPollEvents();
+
+    wgpu::SurfaceTexture surfaceTexture;
+    surface.GetCurrentTexture(&surfaceTexture);
+
+    if (surfaceTexture.status != wgpu::SurfaceGetCurrentTextureStatus::Success)
+    {
+      break;
+    }
+
+    wgpu::TextureViewDescriptor textureViewDescriptor{};
+    textureViewDescriptor.format = surfaceTexture.texture.GetFormat();
+    textureViewDescriptor.dimension = wgpu::TextureViewDimension::e2D;
+    textureViewDescriptor.baseMipLevel = 0;
+    textureViewDescriptor.mipLevelCount = 1;
+    textureViewDescriptor.baseArrayLayer = 0;
+    textureViewDescriptor.arrayLayerCount = 1;
+    textureViewDescriptor.aspect = wgpu::TextureAspect::All;
+    auto surfaceView =
+      surfaceTexture.texture.CreateView(&textureViewDescriptor);
+
+    wgpu::CommandEncoderDescriptor encoderDescriptor{};
+    encoderDescriptor.label = "Command Encoder";
+    auto encoder = device.CreateCommandEncoder(&encoderDescriptor);
+
+    wgpu::RenderPassColorAttachment colorAttachment{};
+    colorAttachment.view = surfaceView;
+    colorAttachment.loadOp = wgpu::LoadOp::Clear;
+    colorAttachment.storeOp = wgpu::StoreOp::Store;
+    colorAttachment.clearValue = {0.1, 0.1, 0.1, 1.0};
+    colorAttachment.depthSlice = wgpu::kDepthSliceUndefined;
+
+    wgpu::RenderPassDescriptor renderPassDescriptor{};
+    renderPassDescriptor.label = "Render Pass";
+    renderPassDescriptor.colorAttachmentCount = 1;
+    renderPassDescriptor.colorAttachments = &colorAttachment;
+
+    auto renderPass = encoder.BeginRenderPass(&renderPassDescriptor);
+    renderPass.End();
+
+    wgpu::CommandBufferDescriptor commandDescriptor{};
+    commandDescriptor.label = "Command Buffer";
+    auto command = encoder.Finish(&commandDescriptor);
+
+    queue.Submit(1, &command);
+
+    surface.Present();
   }
 }

@@ -19,11 +19,11 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${OUTPUT_DIR}")
 
 set(SOURCES 
   src/main.cpp
-  src/platform/glfw_webgpu_surface.cpp
+  src/platform/glfw_wgpu_surface.cpp
 )
 
 set(HEADERS
-src/platform/glfw_webgpu_surface.h
+src/platform/glfw_wgpu_surface.h
 )
 
 add_executable(AnimationLibrary ${SOURCES} ${HEADERS})

@@ -1,4 +1,4 @@
-#include "glfw_webgpu_surface.h"
+#include "glfw_wgpu_surface.h"
 
 namespace platform
 {
@@ -16,6 +16,7 @@ glfwCreateWGPUSurface(const wgpu::Instance& instance, GLFWwindow* window)
 
   wgpu::SurfaceDescriptor descriptor{};
   descriptor.nextInChain = &sourceWindows;
+  descriptor.label = "Surface";
 
   return instance.CreateSurface(&descriptor);
 #else
