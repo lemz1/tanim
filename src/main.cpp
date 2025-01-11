@@ -1,10 +1,29 @@
+#include <GLFW/glfw3.h>
 #include <dawn/webgpu_cpp_print.h>
 #include <webgpu/webgpu_cpp.h>
 
 #include <iostream>
 
+#include "platform/glfw_webgpu_surface.h"
+
 int main()
 {
+  if (!glfwInit())
+  {
+    std::cerr << "[GLFW] Could not initialize GLFW" << std::endl;
+    return 1;
+  }
+
+  glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+  GLFWwindow* window =
+    glfwCreateWindow(1280, 720, "Animation", nullptr, nullptr);
+  if (!window)
+  {
+    std::cerr << "[GLFW] Could not create Window" << std::endl;
+    glfwTerminate();
+    return 1;
+  }
+
 #ifdef __EMSCRIPTEN__
   auto instance = wgpu::CreateInstance(nullptr);
 #else
@@ -101,4 +120,16 @@ int main()
     adapter.RequestDevice(&deviceDescriptor, deviceCallbackInfo),
     UINT64_MAX
   );
+
+  auto surface = platform::glfwCreateWGPUSurface(instance, window);
+  if (!surface)
+  {
+    std::cerr << "[WebGPU] Could not create Surface" << std::endl;
+    return 1;
+  }
+
+  while (!glfwWindowShouldClose(window))
+  {
+    glfwPollEvents();
+  }
 }

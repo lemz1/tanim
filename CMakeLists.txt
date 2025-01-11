@@ -19,11 +19,15 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${OUTPUT_DIR}")
 
 set(SOURCES 
   src/main.cpp
+  src/platform/glfw_webgpu_surface.cpp
 )
 
 set(HEADERS
-
+src/platform/glfw_webgpu_surface.h
 )
+
+add_executable(AnimationLibrary ${SOURCES} ${HEADERS})
+
 
 if (WIN32)
   list(APPEND CMAKE_PREFIX_PATH "vnd/webgpu/webgpu/windows-latest")
@@ -35,10 +39,6 @@ endif()
 
 find_package(Dawn REQUIRED)
 
-add_subdirectory(vnd/glfw)
-
-add_executable(AnimationLibrary ${SOURCES} ${HEADERS})
-
 target_link_libraries(AnimationLibrary dawn::webgpu_dawn)
 
 add_custom_command(TARGET AnimationLibrary POST_BUILD
@@ -46,3 +46,11 @@ add_custom_command(TARGET AnimationLibrary POST_BUILD
   $<TARGET_FILE:dawn::webgpu_dawn>
   $<TARGET_FILE_DIR:AnimationLibrary>
 )
+
+
+add_subdirectory(vnd/glfw)
+target_link_libraries(AnimationLibrary glfw)
+if (GLFW_BUILD_WIN32)
+  target_compile_definitions(AnimationLibrary PRIVATE _GLFW_WIN32)
+endif()
+
