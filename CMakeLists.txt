@@ -35,9 +35,14 @@ endif()
 
 find_package(Dawn REQUIRED)
 
+add_library(webgpu ALIAS dawn::webgpu_dawn) # required for glfw3webgpu
+
+add_subdirectory(vnd/glfw)
+add_subdirectory(vnd/glfw3webgpu)
+
 add_executable(AnimationLibrary ${SOURCES} ${HEADERS})
 
-target_link_libraries(AnimationLibrary dawn::webgpu_dawn)
+target_link_libraries(AnimationLibrary webgpu)
 
 add_custom_command(TARGET AnimationLibrary POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
