@@ -6,6 +6,9 @@
 
 #include "platform/glfw_wgpu_surface.h"
 
+constexpr uint32_t windowWidth = 1280;
+constexpr uint32_t windowHeight = 720;
+
 int main()
 {
   if (!glfwInit())
@@ -16,7 +19,7 @@ int main()
 
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
   GLFWwindow* window =
-    glfwCreateWindow(1280, 720, "Animation", nullptr, nullptr);
+    glfwCreateWindow(windowWidth, windowHeight, "Animation", nullptr, nullptr);
   if (!window)
   {
     std::cerr << "[GLFW] Could not create Window" << std::endl;
@@ -130,11 +133,16 @@ int main()
     return 1;
   }
 
+  wgpu::SurfaceCapabilities surfaceCapabilities;
+  surface.GetCapabilities(adapter, &surfaceCapabilities);
+
+  wgpu::TextureFormat surfaceFormat = surfaceCapabilities.formats[0];
+
   wgpu::SurfaceConfiguration surfaceConfig{};
   surfaceConfig.device = device;
-  surfaceConfig.width = 1280;
-  surfaceConfig.height = 720;
-  surfaceConfig.format = wgpu::TextureFormat::BGRA8Unorm;
+  surfaceConfig.width = windowWidth;
+  surfaceConfig.height = windowHeight;
+  surfaceConfig.format = surfaceFormat;
   surfaceConfig.usage = wgpu::TextureUsage::RenderAttachment;
   surfaceConfig.presentMode = wgpu::PresentMode::Fifo;
   surfaceConfig.alphaMode = wgpu::CompositeAlphaMode::Auto;
@@ -146,11 +154,6 @@ int main()
 
     wgpu::SurfaceTexture surfaceTexture;
     surface.GetCurrentTexture(&surfaceTexture);
-
-    if (surfaceTexture.status != wgpu::SurfaceGetCurrentTextureStatus::Success)
-    {
-      break;
-    }
 
     wgpu::TextureViewDescriptor textureViewDescriptor{};
     textureViewDescriptor.format = surfaceTexture.texture.GetFormat();
