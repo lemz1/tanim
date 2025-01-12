@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Windows Debug",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/export/debug/bin/AnimationLibrary.exe",
+      "cwd": "${workspaceFolder}/export/debug/bin",
+      "console": "integratedTerminal",
+      "preLaunchTask": "Build Windows Debug"
+    },
+    {
+      "name": "Run Windows Release",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/export/release/bin/AnimationLibrary.exe",
+      "cwd": "${workspaceFolder}/export/release/bin",
+      "console": "integratedTerminal",
+      "preLaunchTask": "Build Windows Release"
+    },
+  ]
+}

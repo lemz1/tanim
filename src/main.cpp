@@ -5,6 +5,7 @@
 #include <iostream>
 #include <vector>
 
+#include "graphics/renderer.h"
 #include "platform/glfw_wgpu_surface.h"
 
 constexpr uint32_t windowWidth = 1280;
@@ -149,46 +150,7 @@ int main()
   surfaceConfig.alphaMode = wgpu::CompositeAlphaMode::Auto;
   surface.Configure(&surfaceConfig);
 
-  std::vector<float> vertices = {
-    -0.5f,
-    -0.5f,
-    +0.0f,
-    +0.0f,
-    //
-    +0.5f,
-    -0.5f,
-    +1.0f,
-    +0.0f,
-    //
-    -0.5f,
-    +0.5f,
-    +0.0f,
-    +1.0f,
-    //
-    +0.5f,
-    +0.5f,
-    +1.0f,
-    +1.0f,
-  };
-
-  wgpu::BufferDescriptor vertexBufferDescriptor{};
-  vertexBufferDescriptor.label = "Vertex Buffer";
-  vertexBufferDescriptor.size = vertices.size() * sizeof(float);
-  vertexBufferDescriptor.usage =
-    wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst;
-  auto vertexBuffer = device.CreateBuffer(&vertexBufferDescriptor);
-  queue
-    .WriteBuffer(vertexBuffer, 0, vertices.data(), vertexBufferDescriptor.size);
-
-  std::vector<uint32_t> indices = {0, 1, 2, 1, 3, 2};
-
-  wgpu::BufferDescriptor indexBufferDescriptor{};
-  indexBufferDescriptor.label = "Index Buffer";
-  indexBufferDescriptor.size = indices.size() * sizeof(uint32_t);
-  indexBufferDescriptor.usage =
-    wgpu::BufferUsage::Index | wgpu::BufferUsage::CopyDst;
-  auto indexBuffer = device.CreateBuffer(&indexBufferDescriptor);
-  queue.WriteBuffer(indexBuffer, 0, indices.data(), indexBufferDescriptor.size);
+  auto renderer = graphics::Renderer(device);
 
   const char* shaderCode = R"(
     struct VertexInput {
@@ -270,40 +232,9 @@ int main()
     auto surfaceView =
       surfaceTexture.texture.CreateView(&textureViewDescriptor);
 
-    wgpu::CommandEncoderDescriptor encoderDescriptor{};
-    encoderDescriptor.label = "Command Encoder";
-    auto encoder = device.CreateCommandEncoder(&encoderDescriptor);
-
-    wgpu::RenderPassColorAttachment colorAttachment{};
-    colorAttachment.view = surfaceView;
-    colorAttachment.loadOp = wgpu::LoadOp::Clear;
-    colorAttachment.storeOp = wgpu::StoreOp::Store;
-    colorAttachment.clearValue = {0.1, 0.1, 0.1, 1.0};
-    colorAttachment.depthSlice = wgpu::kDepthSliceUndefined;
-
-    wgpu::RenderPassDescriptor renderPassDescriptor{};
-    renderPassDescriptor.label = "Render Pass";
-    renderPassDescriptor.colorAttachmentCount = 1;
-    renderPassDescriptor.colorAttachments = &colorAttachment;
-
-    auto renderPass = encoder.BeginRenderPass(&renderPassDescriptor);
-    renderPass.SetPipeline(pipeline);
-    renderPass
-      .SetVertexBuffer(0, vertexBuffer, 0, vertices.size() * sizeof(float));
-    renderPass.SetIndexBuffer(
-      indexBuffer,
-      wgpu::IndexFormat::Uint32,
-      0,
-      indices.size() * sizeof(uint32_t)
-    );
-    renderPass.DrawIndexed(indices.size(), 1, 0, 0, 0);
-    renderPass.End();
-
-    wgpu::CommandBufferDescriptor commandDescriptor{};
-    commandDescriptor.label = "Command Buffer";
-    auto command = encoder.Finish(&commandDescriptor);
-
-    queue.Submit(1, &command);
+    renderer.DrawQuad(-0.5f, +0.5f);
+    renderer.DrawQuad(+0.5f, -0.5f);
+    renderer.Flush(surfaceView, pipeline);
 
     surface.Present();
   }
