@@ -3,6 +3,7 @@
 #include <webgpu/webgpu_cpp.h>
 
 #include <iostream>
+#include <vector>
 
 #include "platform/glfw_wgpu_surface.h"
 
@@ -148,14 +149,66 @@ int main()
   surfaceConfig.alphaMode = wgpu::CompositeAlphaMode::Auto;
   surface.Configure(&surfaceConfig);
 
+  std::vector<float> vertices = {
+    -0.5f,
+    -0.5f,
+    +0.0f,
+    +0.0f,
+    //
+    +0.5f,
+    -0.5f,
+    +1.0f,
+    +0.0f,
+    //
+    -0.5f,
+    +0.5f,
+    +0.0f,
+    +1.0f,
+    //
+    +0.5f,
+    +0.5f,
+    +1.0f,
+    +1.0f,
+  };
+
+  wgpu::BufferDescriptor vertexBufferDescriptor{};
+  vertexBufferDescriptor.label = "Vertex Buffer";
+  vertexBufferDescriptor.size = vertices.size() * sizeof(float);
+  vertexBufferDescriptor.usage =
+    wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst;
+  auto vertexBuffer = device.CreateBuffer(&vertexBufferDescriptor);
+  queue
+    .WriteBuffer(vertexBuffer, 0, vertices.data(), vertexBufferDescriptor.size);
+
+  std::vector<uint32_t> indices = {0, 1, 2, 1, 3, 2};
+
+  wgpu::BufferDescriptor indexBufferDescriptor{};
+  indexBufferDescriptor.label = "Index Buffer";
+  indexBufferDescriptor.size = indices.size() * sizeof(uint32_t);
+  indexBufferDescriptor.usage =
+    wgpu::BufferUsage::Index | wgpu::BufferUsage::CopyDst;
+  auto indexBuffer = device.CreateBuffer(&indexBufferDescriptor);
+  queue.WriteBuffer(indexBuffer, 0, indices.data(), indexBufferDescriptor.size);
+
   const char* shaderCode = R"(
-    @vertex fn vsMain(@builtin(vertex_index) i : u32) ->
-      @builtin(position) vec4f {
-        const pos = array(vec2f(0, 1), vec2f(-1, -1), vec2f(1, -1));
-        return vec4f(pos[i], 0, 1);
+    struct VertexInput {
+      @location(0) position: vec2f,
+      @location(1) texCoord: vec2f,
+    };
+
+    struct VertexOutput {
+      @builtin(position) position: vec4f,
+      @location(0) texCoord: vec2f,
+    };
+
+    @vertex fn vsMain(in: VertexInput) -> VertexOutput {
+      var out: VertexOutput;
+      out.position = vec4f(in.position, 0.0, 1.0);
+      out.texCoord = in.texCoord;
+      return out;
     }
-    @fragment fn fsMain() -> @location(0) vec4f {
-        return vec4f(1, 0, 0, 1);
+    @fragment fn fsMain(in: VertexOutput) -> @location(0) vec4f {
+      return vec4f(in.texCoord, 0.0, 1.0);
     }
 )";
 
@@ -177,9 +230,25 @@ int main()
   fragmentState.targetCount = 1;
   fragmentState.targets = &colorTargetState;
 
+  std::vector<wgpu::VertexAttribute> vertexAttributes(2);
+  vertexAttributes[0].format = wgpu::VertexFormat::Float32x2;
+  vertexAttributes[0].offset = 0;
+  vertexAttributes[0].shaderLocation = 0;
+  vertexAttributes[1].format = wgpu::VertexFormat::Float32x2;
+  vertexAttributes[1].offset = 2 * sizeof(float);
+  vertexAttributes[1].shaderLocation = 1;
+
+  wgpu::VertexBufferLayout vertexBufferLayout{};
+  vertexBufferLayout.attributeCount = vertexAttributes.size();
+  vertexBufferLayout.attributes = vertexAttributes.data();
+  vertexBufferLayout.stepMode = wgpu::VertexStepMode::Vertex;
+  vertexBufferLayout.arrayStride = 4 * sizeof(float);
+
   wgpu::RenderPipelineDescriptor pipelineDescriptor{};
   pipelineDescriptor.fragment = &fragmentState;
   pipelineDescriptor.vertex.module = shaderModule;
+  pipelineDescriptor.vertex.bufferCount = 1;
+  pipelineDescriptor.vertex.buffers = &vertexBufferLayout;
   wgpu::RenderPipeline pipeline =
     device.CreateRenderPipeline(&pipelineDescriptor);
 
@@ -219,7 +288,15 @@ int main()
 
     auto renderPass = encoder.BeginRenderPass(&renderPassDescriptor);
     renderPass.SetPipeline(pipeline);
-    renderPass.Draw(3, 1, 0, 0);
+    renderPass
+      .SetVertexBuffer(0, vertexBuffer, 0, vertices.size() * sizeof(float));
+    renderPass.SetIndexBuffer(
+      indexBuffer,
+      wgpu::IndexFormat::Uint32,
+      0,
+      indices.size() * sizeof(uint32_t)
+    );
+    renderPass.DrawIndexed(indices.size(), 1, 0, 0, 0);
     renderPass.End();
 
     wgpu::CommandBufferDescriptor commandDescriptor{};
