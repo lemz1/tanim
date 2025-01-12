@@ -148,6 +148,41 @@ int main()
   surfaceConfig.alphaMode = wgpu::CompositeAlphaMode::Auto;
   surface.Configure(&surfaceConfig);
 
+  const char* shaderCode = R"(
+    @vertex fn vsMain(@builtin(vertex_index) i : u32) ->
+      @builtin(position) vec4f {
+        const pos = array(vec2f(0, 1), vec2f(-1, -1), vec2f(1, -1));
+        return vec4f(pos[i], 0, 1);
+    }
+    @fragment fn fsMain() -> @location(0) vec4f {
+        return vec4f(1, 0, 0, 1);
+    }
+)";
+
+  wgpu::ShaderModuleWGSLDescriptor fromWGSL{};
+  fromWGSL.code = shaderCode;
+  fromWGSL.sType = wgpu::SType::ShaderSourceWGSL;
+
+  wgpu::ShaderModuleDescriptor shaderModuleDescriptor{};
+  shaderModuleDescriptor.nextInChain = &fromWGSL;
+
+  wgpu::ShaderModule shaderModule =
+    device.CreateShaderModule(&shaderModuleDescriptor);
+
+  wgpu::ColorTargetState colorTargetState{};
+  colorTargetState.format = surfaceFormat;
+
+  wgpu::FragmentState fragmentState{};
+  fragmentState.module = shaderModule;
+  fragmentState.targetCount = 1;
+  fragmentState.targets = &colorTargetState;
+
+  wgpu::RenderPipelineDescriptor pipelineDescriptor{};
+  pipelineDescriptor.fragment = &fragmentState;
+  pipelineDescriptor.vertex.module = shaderModule;
+  wgpu::RenderPipeline pipeline =
+    device.CreateRenderPipeline(&pipelineDescriptor);
+
   while (!glfwWindowShouldClose(window))
   {
     glfwPollEvents();
@@ -183,6 +218,8 @@ int main()
     renderPassDescriptor.colorAttachments = &colorAttachment;
 
     auto renderPass = encoder.BeginRenderPass(&renderPassDescriptor);
+    renderPass.SetPipeline(pipeline);
+    renderPass.Draw(3, 1, 0, 0);
     renderPass.End();
 
     wgpu::CommandBufferDescriptor commandDescriptor{};
