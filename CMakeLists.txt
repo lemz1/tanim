@@ -6,11 +6,11 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(OUTPUT_DIR_CONFIG "unknown")
-if(CMAKE_BUILD_TYPE MATCHES "Debug")
+if (CMAKE_BUILD_TYPE MATCHES "Debug")
     set(OUTPUT_DIR_CONFIG "debug")
-elseif(CMAKE_BUILD_TYPE MATCHES "Release")
+elseif (CMAKE_BUILD_TYPE MATCHES "Release")
     set(OUTPUT_DIR_CONFIG "release")
-endif()
+endif ()
 
 set(OUTPUT_DIR "${CMAKE_SOURCE_DIR}/export/${OUTPUT_DIR_CONFIG}/bin")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${OUTPUT_DIR}")
@@ -22,6 +22,10 @@ set(SOURCES
   src/platform/glfw_wgpu_surface.cpp
   src/graphics/renderer.cpp
 )
+
+if (APPLE)
+  list(APPEND SOURCES src/platform/glfw_wgpu_surface.mm)
+endif ()
 
 set(HEADERS
   src/platform/glfw_wgpu_surface.h
@@ -38,7 +42,7 @@ elseif (APPLE)
   list(APPEND CMAKE_PREFIX_PATH "vnd/webgpu/webgpu/macos-latest")
 elseif (UNIX)
   list(APPEND CMAKE_PREFIX_PATH "vnd/webgpu/webgpu/ubuntu-latest")
-endif()
+endif ()
 
 find_package(Dawn REQUIRED)
 
@@ -54,9 +58,17 @@ add_custom_command(TARGET AnimationLibrary POST_BUILD
 
 add_subdirectory(vnd/glfw)
 target_link_libraries(AnimationLibrary glfw)
+
 if (GLFW_BUILD_WIN32)
   target_compile_definitions(AnimationLibrary PRIVATE _GLFW_WIN32)
-endif()
+elseif (GLFW_BUILD_X11)
+  target_compile_definitions(AnimationLibrary PRIVATE _GLFW_X11)
+elseif (GLFW_BUILD_WAYLAND)
+  target_compile_definitions(AnimationLibrary PRIVATE _GLFW_WAYLAND)
+elseif (GLFW_BUILD_COCOA)
+  target_compile_definitions(AnimationLibrary PRIVATE _GLFW_COCOA)
+  target_link_libraries(AnimationLibrary PRIVATE "-framework Metal" "-framework QuartzCore")
+endif ()
 
 # GLM
 
