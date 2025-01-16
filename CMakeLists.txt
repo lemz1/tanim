@@ -30,6 +30,7 @@ set(HEADERS
 
 add_executable(AnimationLibrary ${SOURCES} ${HEADERS})
 
+# Dawn
 
 if (WIN32)
   list(APPEND CMAKE_PREFIX_PATH "vnd/webgpu/webgpu/windows-latest")
@@ -49,6 +50,7 @@ add_custom_command(TARGET AnimationLibrary POST_BUILD
   $<TARGET_FILE_DIR:AnimationLibrary>
 )
 
+# GLFW
 
 add_subdirectory(vnd/glfw)
 target_link_libraries(AnimationLibrary glfw)
@@ -56,3 +58,6 @@ if (GLFW_BUILD_WIN32)
   target_compile_definitions(AnimationLibrary PRIVATE _GLFW_WIN32)
 endif()
 
+# GLM
+
+target_include_directories(AnimationLibrary PRIVATE ${CMAKE_SOURCE_DIR}/vnd/glm)

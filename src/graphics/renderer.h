@@ -2,8 +2,16 @@
 
 #include <webgpu/webgpu_cpp.h>
 
+#include <glm/glm.hpp>
+
 namespace graphics
 {
+struct Vertex
+{
+  glm::vec3 position;
+  glm::vec2 texCoord;
+};
+
 class Renderer
 {
  public:

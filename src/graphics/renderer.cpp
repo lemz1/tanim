@@ -2,7 +2,7 @@
 
 namespace graphics
 {
-constexpr size_t vertexBufferSize = 4096 * sizeof(float);
+constexpr size_t vertexBufferSize = 1000 * sizeof(Vertex);
 constexpr size_t indexBufferSize = vertexBufferSize * 2;
 
 Renderer::Renderer(const wgpu::Device& device) : _device(device)
@@ -30,32 +30,29 @@ Renderer::~Renderer()
 
 void Renderer::DrawQuad(float x, float y)
 {
-  std::vector<float> vertices = {
-    -0.5f + x,
-    -0.5f + y,
-    +0.0f,
-    +0.0f,
-    //
-    +0.5f + x,
-    -0.5f + y,
-    +1.0f,
-    +0.0f,
-    //
-    -0.5f + x,
-    +0.5f + y,
-    +0.0f,
-    +1.0f,
-    //
-    +0.5f + x,
-    +0.5f + y,
-    +1.0f,
-    +1.0f,
+  std::vector<Vertex> vertices = {
+    {
+      {-0.5f + x, -0.5f + y, +0.0f},
+      {+0.0f, +0.0f},
+    },
+    {
+      {+0.5f + x, -0.5f + y, +0.0f},
+      {+1.0f, +0.0f},
+    },
+    {
+      {-0.5f + x, +0.5f + y, +0.0f},
+      {+0.0f, +1.0f},
+    },
+    {
+      {+0.5f + x, +0.5f + y, +0.0f},
+      {+1.0f, +1.0f},
+    },
   };
   _queue.WriteBuffer(
     _vertexBuffer,
     _vertexBufferOffset,
     vertices.data(),
-    vertices.size() * sizeof(float)
+    vertices.size() * sizeof(Vertex)
   );
 
   std::vector<uint32_t> indices = {
@@ -74,7 +71,7 @@ void Renderer::DrawQuad(float x, float y)
     indices.size() * sizeof(uint32_t)
   );
 
-  _vertexBufferOffset += vertices.size() * sizeof(float);
+  _vertexBufferOffset += vertices.size() * sizeof(Vertex);
   _indexBufferOffset += indices.size() * sizeof(uint32_t);
   _indexValueOffset += 4;
 }

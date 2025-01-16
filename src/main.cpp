@@ -154,7 +154,7 @@ int main()
 
   const char* shaderCode = R"(
     struct VertexInput {
-      @location(0) position: vec2f,
+      @location(0) position: vec3f,
       @location(1) texCoord: vec2f,
     };
 
@@ -165,7 +165,7 @@ int main()
 
     @vertex fn vsMain(in: VertexInput) -> VertexOutput {
       var out: VertexOutput;
-      out.position = vec4f(in.position, 0.0, 1.0);
+      out.position = vec4f(in.position, 1.0);
       out.texCoord = in.texCoord;
       return out;
     }
@@ -193,18 +193,18 @@ int main()
   fragmentState.targets = &colorTargetState;
 
   std::vector<wgpu::VertexAttribute> vertexAttributes(2);
-  vertexAttributes[0].format = wgpu::VertexFormat::Float32x2;
-  vertexAttributes[0].offset = 0;
+  vertexAttributes[0].format = wgpu::VertexFormat::Float32x3;
+  vertexAttributes[0].offset = offsetof(graphics::Vertex, position);
   vertexAttributes[0].shaderLocation = 0;
   vertexAttributes[1].format = wgpu::VertexFormat::Float32x2;
-  vertexAttributes[1].offset = 2 * sizeof(float);
+  vertexAttributes[1].offset = offsetof(graphics::Vertex, texCoord);
   vertexAttributes[1].shaderLocation = 1;
 
   wgpu::VertexBufferLayout vertexBufferLayout{};
   vertexBufferLayout.attributeCount = vertexAttributes.size();
   vertexBufferLayout.attributes = vertexAttributes.data();
   vertexBufferLayout.stepMode = wgpu::VertexStepMode::Vertex;
-  vertexBufferLayout.arrayStride = 4 * sizeof(float);
+  vertexBufferLayout.arrayStride = sizeof(graphics::Vertex);
 
   wgpu::RenderPipelineDescriptor pipelineDescriptor{};
   pipelineDescriptor.fragment = &fragmentState;
