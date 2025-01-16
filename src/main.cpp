@@ -153,33 +153,22 @@ int main()
   auto renderer = graphics::Renderer(device);
 
   const char* shaderCode = R"(
-    struct VertexInput {
-      @location(0) position: vec3f,
-      @location(1) texCoord: vec2f,
-    };
-
     struct VertexOutput {
-      @builtin(position) position: vec4f,
       @location(0) texCoord: vec2f,
     };
 
-    @vertex fn vsMain(in: VertexInput) -> VertexOutput {
-      var out: VertexOutput;
-      out.position = vec4f(in.position, 1.0);
-      out.texCoord = in.texCoord;
-      return out;
-    }
     @fragment fn fsMain(in: VertexOutput) -> @location(0) vec4f {
       return vec4f(in.texCoord, 0.0, 1.0);
     }
 )";
 
-  wgpu::ShaderModuleWGSLDescriptor fromWGSL{};
-  fromWGSL.code = shaderCode;
-  fromWGSL.sType = wgpu::SType::ShaderSourceWGSL;
+  wgpu::ShaderModuleWGSLDescriptor wgslDescriptor{};
+  wgslDescriptor.code = shaderCode;
+  wgslDescriptor.sType = wgpu::SType::ShaderSourceWGSL;
 
   wgpu::ShaderModuleDescriptor shaderModuleDescriptor{};
-  shaderModuleDescriptor.nextInChain = &fromWGSL;
+  shaderModuleDescriptor.label = "Fragment Module";
+  shaderModuleDescriptor.nextInChain = &wgslDescriptor;
 
   wgpu::ShaderModule shaderModule =
     device.CreateShaderModule(&shaderModuleDescriptor);
@@ -194,9 +183,7 @@ int main()
 
   wgpu::RenderPipelineDescriptor pipelineDescriptor{};
   pipelineDescriptor.fragment = &fragmentState;
-  pipelineDescriptor.vertex.module = shaderModule;
-  pipelineDescriptor.vertex.bufferCount = 1;
-  pipelineDescriptor.vertex.buffers = &renderer.VertexBufferLayout();
+  pipelineDescriptor.vertex = renderer.VertexState();
   wgpu::RenderPipeline pipeline =
     device.CreateRenderPipeline(&pipelineDescriptor);
 

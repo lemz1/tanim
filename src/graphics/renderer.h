@@ -24,14 +24,16 @@ class Renderer
   void
   Flush(const wgpu::TextureView& view, const wgpu::RenderPipeline& pipeline);
 
-  const wgpu::VertexBufferLayout& VertexBufferLayout() const
+  const wgpu::VertexState& VertexState() const
   {
-    return _vertexBufferLayout;
+    return _vertexState;
   }
 
  private:
   std::array<wgpu::VertexAttribute, 2> _vertexAttributes;
   wgpu::VertexBufferLayout _vertexBufferLayout;
+  wgpu::ShaderModule _shaderModule;
+  wgpu::VertexState _vertexState;
 
   wgpu::Buffer _vertexBuffer;
   wgpu::Buffer _indexBuffer;

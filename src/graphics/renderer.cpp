@@ -34,6 +34,39 @@ Renderer::Renderer(const wgpu::Device& device) : _device(device)
   _vertexBufferLayout.attributes = _vertexAttributes.data();
   _vertexBufferLayout.stepMode = wgpu::VertexStepMode::Vertex;
   _vertexBufferLayout.arrayStride = sizeof(Vertex);
+
+  const char* shaderCode = R"(
+    struct VertexInput {
+      @location(0) position: vec3f,
+      @location(1) texCoord: vec2f,
+    };
+
+    struct VertexOutput {
+      @builtin(position) position: vec4f,
+      @location(0) texCoord: vec2f,
+    };
+
+    @vertex fn vsMain(in: VertexInput) -> VertexOutput {
+      var out: VertexOutput;
+      out.position = vec4f(in.position, 1.0);
+      out.texCoord = in.texCoord;
+      return out;
+    }
+)";
+
+  wgpu::ShaderModuleWGSLDescriptor wgslDescriptor{};
+  wgslDescriptor.code = shaderCode;
+  wgslDescriptor.sType = wgpu::SType::ShaderSourceWGSL;
+
+  wgpu::ShaderModuleDescriptor shaderModuleDescriptor{};
+  shaderModuleDescriptor.label = "Renderer Vertex Module";
+  shaderModuleDescriptor.nextInChain = &wgslDescriptor;
+
+  _shaderModule = _device.CreateShaderModule(&shaderModuleDescriptor);
+
+  _vertexState.module = _shaderModule;
+  _vertexState.bufferCount = 1;
+  _vertexState.buffers = &_vertexBufferLayout;
 }
 
 Renderer::~Renderer()
