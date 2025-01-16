@@ -2,6 +2,7 @@
 
 #include <webgpu/webgpu_cpp.h>
 
+#include <array>
 #include <glm/glm.hpp>
 
 namespace graphics
@@ -23,7 +24,15 @@ class Renderer
   void
   Flush(const wgpu::TextureView& view, const wgpu::RenderPipeline& pipeline);
 
+  const wgpu::VertexBufferLayout& VertexBufferLayout() const
+  {
+    return _vertexBufferLayout;
+  }
+
  private:
+  std::array<wgpu::VertexAttribute, 2> _vertexAttributes;
+  wgpu::VertexBufferLayout _vertexBufferLayout;
+
   wgpu::Buffer _vertexBuffer;
   wgpu::Buffer _indexBuffer;
 

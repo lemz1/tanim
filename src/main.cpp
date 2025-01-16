@@ -192,25 +192,11 @@ int main()
   fragmentState.targetCount = 1;
   fragmentState.targets = &colorTargetState;
 
-  std::vector<wgpu::VertexAttribute> vertexAttributes(2);
-  vertexAttributes[0].format = wgpu::VertexFormat::Float32x3;
-  vertexAttributes[0].offset = offsetof(graphics::Vertex, position);
-  vertexAttributes[0].shaderLocation = 0;
-  vertexAttributes[1].format = wgpu::VertexFormat::Float32x2;
-  vertexAttributes[1].offset = offsetof(graphics::Vertex, texCoord);
-  vertexAttributes[1].shaderLocation = 1;
-
-  wgpu::VertexBufferLayout vertexBufferLayout{};
-  vertexBufferLayout.attributeCount = vertexAttributes.size();
-  vertexBufferLayout.attributes = vertexAttributes.data();
-  vertexBufferLayout.stepMode = wgpu::VertexStepMode::Vertex;
-  vertexBufferLayout.arrayStride = sizeof(graphics::Vertex);
-
   wgpu::RenderPipelineDescriptor pipelineDescriptor{};
   pipelineDescriptor.fragment = &fragmentState;
   pipelineDescriptor.vertex.module = shaderModule;
   pipelineDescriptor.vertex.bufferCount = 1;
-  pipelineDescriptor.vertex.buffers = &vertexBufferLayout;
+  pipelineDescriptor.vertex.buffers = &renderer.VertexBufferLayout();
   wgpu::RenderPipeline pipeline =
     device.CreateRenderPipeline(&pipelineDescriptor);
 

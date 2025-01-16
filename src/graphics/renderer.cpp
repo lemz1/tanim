@@ -22,6 +22,18 @@ Renderer::Renderer(const wgpu::Device& device) : _device(device)
   indexBufferDescriptor.usage =
     wgpu::BufferUsage::Index | wgpu::BufferUsage::CopyDst;
   _indexBuffer = _device.CreateBuffer(&indexBufferDescriptor);
+
+  _vertexAttributes[0].format = wgpu::VertexFormat::Float32x3;
+  _vertexAttributes[0].offset = offsetof(Vertex, position);
+  _vertexAttributes[0].shaderLocation = 0;
+  _vertexAttributes[1].format = wgpu::VertexFormat::Float32x2;
+  _vertexAttributes[1].offset = offsetof(Vertex, texCoord);
+  _vertexAttributes[1].shaderLocation = 1;
+
+  _vertexBufferLayout.attributeCount = _vertexAttributes.size();
+  _vertexBufferLayout.attributes = _vertexAttributes.data();
+  _vertexBufferLayout.stepMode = wgpu::VertexStepMode::Vertex;
+  _vertexBufferLayout.arrayStride = sizeof(Vertex);
 }
 
 Renderer::~Renderer()
