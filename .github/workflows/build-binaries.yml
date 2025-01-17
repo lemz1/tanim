@@ -1,4 +1,4 @@
-name: Test Compilation
+name: Build Binaries
 
 on:
   push:
@@ -37,7 +37,6 @@ jobs:
               libxcursor-dev \
               mesa-common-dev 
 
-
       - name: Checkout
         uses: actions/checkout@v3
 
@@ -56,3 +55,9 @@ jobs:
         run: |
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
           cmake --build build --config Release
+
+      - name: Upload ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}
+          path: export/release/bin
