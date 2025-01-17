@@ -83,6 +83,7 @@ glfwCreateWGPUSurface(const wgpu::Instance& instance, GLFWwindow* window)
     {
       std::cerr << "[GLFW] GLFW has no platform" << std::endl;
       assert(false);
+      return wgpu::Surface();
     }
   }
 }
