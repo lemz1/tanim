@@ -1,10 +1,9 @@
 [submodule "vnd/webgpu"]
 	path = vnd/webgpu
-	url = https://github.com/lemz1/WebGPU-Dawn-Binaries.git
+	url = https://github.com/lemz1/webgpu-dawn-binaries.git
 [submodule "vnd/glfw"]
 	path = vnd/glfw
 	url = https://github.com/glfw/glfw.git
-
 [submodule "vnd/glm"]
 	path = vnd/glm
 	url = https://github.com/g-truc/glm.git
