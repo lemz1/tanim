@@ -40,7 +40,7 @@ glfwCreateWGPUSurface(const wgpu::Instance& instance, GLFWwindow* window)
 #ifdef _GLFW_X11
   wgpu::SurfaceSourceXlibWindow source{};
   source.display = glfwGetX11Display();
-  source.window = glfwGetX11Window(windnow);
+  source.window = glfwGetX11Window(window);
   source.sType = wgpu::SType::SurfaceSourceXlibWindow;
 
   wgpu::SurfaceDescriptor descriptor{};

@@ -24,7 +24,7 @@ set(SOURCES
 )
 
 if (APPLE)
-  list(APPEND SOURCES src/platform/glfw_wgpu_surface.mm)
+  list(APPEND SOURCES src/platform/glfw_wgpu_surface_metal.mm)
 endif ()
 
 set(HEADERS
@@ -46,7 +46,7 @@ endif ()
 
 find_package(Dawn REQUIRED)
 
-target_link_libraries(AnimationLibrary dawn::webgpu_dawn)
+target_link_libraries(AnimationLibrary PRIVATE dawn::webgpu_dawn)
 
 add_custom_command(TARGET AnimationLibrary POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -57,7 +57,7 @@ add_custom_command(TARGET AnimationLibrary POST_BUILD
 # GLFW
 
 add_subdirectory(vnd/glfw)
-target_link_libraries(AnimationLibrary glfw)
+target_link_libraries(AnimationLibrary PRIVATE glfw)
 
 if (GLFW_BUILD_WIN32)
   target_compile_definitions(AnimationLibrary PRIVATE _GLFW_WIN32)

@@ -1,0 +1,58 @@
+name: Test Compilation
+
+on:
+  push:
+    branches:
+      - '*'
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Install Windows SDK
+        if: matrix.os == 'windows-latest'
+        uses: GuillaumeFalourd/setup-windows10-sdk-action@v2
+        with:
+          sdk-version: 22621
+
+      - name: Setup MSVC
+        if: matrix.os == 'windows-latest'
+        uses: microsoft/setup-msbuild@v1.3.1
+
+      - name: Setup Linux
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config \
+              libwayland-dev \
+              libx11-xcb-dev \
+              libxi-dev \
+              libxkbcommon-dev \
+              libxrandr-dev \
+              libxinerama-dev \
+              libxcursor-dev \
+              mesa-common-dev 
+
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Init Submodules
+        run: |
+          git submodule update --init
+
+      - name: Build (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          cmake -G "Visual Studio 17 2022" -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_SYSTEM_VERSION="10.0.22621.0"
+          cmake --build build --config Release
+
+      - name: Build (Linux/MacOS)
+        if: matrix.os != 'windows-latest'
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --config Release
