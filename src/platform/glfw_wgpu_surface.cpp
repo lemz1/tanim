@@ -24,49 +24,66 @@ glfwCreateWGPUSurfaceCocoa(const wgpu::Instance& instance, GLFWwindow* window);
 wgpu::Surface
 glfwCreateWGPUSurface(const wgpu::Instance& instance, GLFWwindow* window)
 {
+  switch (glfwGetPlatform())
+  {
 #ifdef _GLFW_WIN32
-  wgpu::SurfaceSourceWindowsHWND source{};
-  source.hinstance = GetModuleHandle(NULL);
-  source.hwnd = glfwGetWin32Window(window);
-  source.sType = wgpu::SType::SurfaceSourceWindowsHWND;
+    case GLFW_PLATFORM_WIN32:
+    {
+      wgpu::SurfaceSourceWindowsHWND source{};
+      source.hinstance = GetModuleHandle(NULL);
+      source.hwnd = glfwGetWin32Window(window);
+      source.sType = wgpu::SType::SurfaceSourceWindowsHWND;
 
-  wgpu::SurfaceDescriptor descriptor{};
-  descriptor.nextInChain = &source;
-  descriptor.label = "Surface";
+      wgpu::SurfaceDescriptor descriptor{};
+      descriptor.nextInChain = &source;
+      descriptor.label = "Surface";
 
-  return instance.CreateSurface(&descriptor);
+      return instance.CreateSurface(&descriptor);
+    }
 #endif
 
 #ifdef _GLFW_X11
-  wgpu::SurfaceSourceXlibWindow source{};
-  source.display = glfwGetX11Display();
-  source.window = glfwGetX11Window(window);
-  source.sType = wgpu::SType::SurfaceSourceXlibWindow;
+    case GLFW_PLATFORM_X11:
+    {
+      wgpu::SurfaceSourceXlibWindow source{};
+      source.display = glfwGetX11Display();
+      source.window = glfwGetX11Window(window);
+      source.sType = wgpu::SType::SurfaceSourceXlibWindow;
 
-  wgpu::SurfaceDescriptor descriptor{};
-  descriptor.nextInChain = &source;
-  descriptor.label = "Surface";
+      wgpu::SurfaceDescriptor descriptor{};
+      descriptor.nextInChain = &source;
+      descriptor.label = "Surface";
 
-  return instance.CreateSurface(&descriptor);
+      return instance.CreateSurface(&descriptor);
+    }
 #endif
 
 #ifdef _GLFW_WAYLAND
-  wgpu::SurfaceSourceWaylandSurface source{};
-  source.display = glfwGetWaylandDisplay();
-  source.surface = glfwGetWaylandWindow(window);
+    case GLFW_PLATFORM_WAYLAND:
+    {
+      wgpu::SurfaceSourceWaylandSurface source{};
+      source.display = glfwGetWaylandDisplay();
+      source.surface = glfwGetWaylandWindow(window);
 
-  wgpu::SurfaceDescriptor descriptor{};
-  descriptor.nextInChain = &source;
-  descriptor.label = "Surface";
+      wgpu::SurfaceDescriptor descriptor{};
+      descriptor.nextInChain = &source;
+      descriptor.label = "Surface";
 
-  return instance.CreateSurface(&descriptor);
+      return instance.CreateSurface(&descriptor);
+    }
 #endif
 
 #ifdef _GLFW_COCOA
-  return glfwCreateWGPUSurfaceCocoa(instance, window);
+    case GLFW_PLATFORM_COCOA:
+    {
+      return glfwCreateWGPUSurfaceCocoa(instance, window);
+    }
 #endif
-
-  std::cerr << "[WebGPU] Surface not supported" << std::endl;
-  assert(false);
+    default:
+    {
+      std::cerr << "[GLFW] GLFW has no platform" << std::endl;
+      assert(false);
+    }
+  }
 }
 }  // namespace platform

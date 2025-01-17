@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(AnimationLibrary VERSION 1.0 LANGUAGES CXX)
+project(tanim VERSION 1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -32,7 +32,7 @@ set(HEADERS
   src/graphics/renderer.h
 )
 
-add_executable(AnimationLibrary ${SOURCES} ${HEADERS})
+add_executable(tanim ${SOURCES} ${HEADERS})
 
 # Dawn
 
@@ -46,30 +46,30 @@ endif ()
 
 find_package(Dawn REQUIRED)
 
-target_link_libraries(AnimationLibrary PRIVATE dawn::webgpu_dawn)
+target_link_libraries(tanim PRIVATE dawn::webgpu_dawn)
 
-add_custom_command(TARGET AnimationLibrary POST_BUILD
+add_custom_command(TARGET tanim POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
   $<TARGET_FILE:dawn::webgpu_dawn>
-  $<TARGET_FILE_DIR:AnimationLibrary>
+  $<TARGET_FILE_DIR:tanim>
 )
 
 # GLFW
 
 add_subdirectory(vnd/glfw)
-target_link_libraries(AnimationLibrary PRIVATE glfw)
+target_link_libraries(tanim PRIVATE glfw)
 
 if (GLFW_BUILD_WIN32)
-  target_compile_definitions(AnimationLibrary PRIVATE _GLFW_WIN32)
+  target_compile_definitions(tanim PRIVATE _GLFW_WIN32)
 elseif (GLFW_BUILD_X11)
-  target_compile_definitions(AnimationLibrary PRIVATE _GLFW_X11)
+  target_compile_definitions(tanim PRIVATE _GLFW_X11)
 elseif (GLFW_BUILD_WAYLAND)
-  target_compile_definitions(AnimationLibrary PRIVATE _GLFW_WAYLAND)
+  target_compile_definitions(tanim PRIVATE _GLFW_WAYLAND)
 elseif (GLFW_BUILD_COCOA)
-  target_compile_definitions(AnimationLibrary PRIVATE _GLFW_COCOA)
-  target_link_libraries(AnimationLibrary PRIVATE "-framework Metal" "-framework QuartzCore")
+  target_compile_definitions(tanim PRIVATE _GLFW_COCOA)
+  target_link_libraries(tanim PRIVATE "-framework Metal" "-framework QuartzCore")
 endif ()
 
 # GLM
 
-target_include_directories(AnimationLibrary PRIVATE ${CMAKE_SOURCE_DIR}/vnd/glm)
+target_include_directories(tanim PRIVATE ${CMAKE_SOURCE_DIR}/vnd/glm)
