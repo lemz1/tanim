@@ -44,29 +44,28 @@ int main()
   }
 
   wgpu::RequestAdapterOptions adapterOptions{};
+
   wgpu::Adapter adapter;
-
-  wgpu::RequestAdapterCallbackInfo adapaterCallbackInfo{};
-  adapaterCallbackInfo.mode = wgpu::CallbackMode::WaitAnyOnly;
-  adapaterCallbackInfo.userdata = &adapter;
-  adapaterCallbackInfo.callback = [](
-                                    WGPURequestAdapterStatus status,
-                                    WGPUAdapter adapter,
-                                    WGPUStringView message,
-                                    void* userdata
-                                  )
-  {
-    auto& data = *static_cast<wgpu::Adapter*>(userdata);
-    data = wgpu::Adapter::Acquire(adapter);
-    if (!adapter)
-    {
-      std::cerr << "[WebGPU] Failed to get Adapter: "
-                << wgpu::StringView(message) << std::endl;
-    }
-  };
-
   instance.WaitAny(
-    instance.RequestAdapter(&adapterOptions, adapaterCallbackInfo),
+    instance.RequestAdapter(
+      &adapterOptions,
+      wgpu::CallbackMode::WaitAnyOnly,
+      [](
+        wgpu::RequestAdapterStatus status,
+        wgpu::Adapter adapter,
+        wgpu::StringView message,
+        wgpu::Adapter* outAdapter
+      )
+      {
+        *outAdapter = adapter;
+        if (!adapter)
+        {
+          std::cerr << "[WebGPU] Failed to get Adapter: "
+                    << wgpu::StringView(message) << std::endl;
+        }
+      },
+      &adapter
+    ),
     UINT64_MAX
   );
   if (!adapter)
@@ -103,26 +102,26 @@ int main()
   );
 
   wgpu::Device device;
-  wgpu::RequestDeviceCallbackInfo deviceCallbackInfo{};
-  deviceCallbackInfo.mode = wgpu::CallbackMode::WaitAnyOnly;
-  deviceCallbackInfo.userdata = &device;
-  deviceCallbackInfo.callback = [](
-                                  WGPURequestDeviceStatus status,
-                                  WGPUDevice device,
-                                  struct WGPUStringView message,
-                                  void* userdata
-                                )
-  {
-    auto& data = *static_cast<wgpu::Device*>(userdata);
-    data = wgpu::Device::Acquire(device);
-    if (!device)
-    {
-      std::cerr << "[WebGPU] Failed to get Device: "
-                << wgpu::StringView(message) << std::endl;
-    }
-  };
   instance.WaitAny(
-    adapter.RequestDevice(&deviceDescriptor, deviceCallbackInfo),
+    adapter.RequestDevice(
+      &deviceDescriptor,
+      wgpu::CallbackMode::WaitAnyOnly,
+      [](
+        wgpu::RequestDeviceStatus status,
+        wgpu::Device device,
+        wgpu::StringView message,
+        wgpu::Device* outDevice
+      )
+      {
+        *outDevice = device;
+        if (!device)
+        {
+          std::cerr << "[WebGPU] Failed to get Device: "
+                    << wgpu::StringView(message) << std::endl;
+        }
+      },
+      &device
+    ),
     UINT64_MAX
   );
 
