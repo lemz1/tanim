@@ -39,6 +39,8 @@ jobs:
 
       - name: Install vcpkg
         uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: 'cf035d9916a0a23042b41fcae7ee0386d245af08'
 
       - name: Checkout
         uses: actions/checkout@v3
