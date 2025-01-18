@@ -60,8 +60,8 @@ int main()
         *outAdapter = adapter;
         if (!adapter)
         {
-          std::cerr << "[WebGPU] Failed to get Adapter: "
-                    << wgpu::StringView(message) << std::endl;
+          std::cerr << "[WebGPU] Failed to get Adapter: " << message
+                    << std::endl;
         }
       },
       &adapter
@@ -116,8 +116,8 @@ int main()
         *outDevice = device;
         if (!device)
         {
-          std::cerr << "[WebGPU] Failed to get Device: "
-                    << wgpu::StringView(message) << std::endl;
+          std::cerr << "[WebGPU] Failed to get Device: " << message
+                    << std::endl;
         }
       },
       &device
