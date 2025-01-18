@@ -29,14 +29,9 @@ int main()
     return 1;
   }
 
-#ifdef __EMSCRIPTEN__
-  auto instance = wgpu::CreateInstance(nullptr);
-#else
   wgpu::InstanceDescriptor instanceDescriptor{};
   instanceDescriptor.features.timedWaitAnyEnable = true;
   auto instance = wgpu::CreateInstance(&instanceDescriptor);
-#endif
-
   if (!instance)
   {
     std::cerr << "[WebGPU] Could not create Instance" << std::endl;
