@@ -123,7 +123,8 @@ void Renderer::DrawQuad(float x, float y)
 
 void Renderer::Flush(
   const wgpu::TextureView& view,
-  const wgpu::RenderPipeline& pipeline
+  const wgpu::RenderPipeline& pipeline,
+  const wgpu::BindGroup& bindGroup
 )
 {
   wgpu::CommandEncoderDescriptor encoderDescriptor{};
@@ -151,6 +152,7 @@ void Renderer::Flush(
     0,
     _indexBufferOffset
   );
+  renderPass.SetBindGroup(0, bindGroup);
   renderPass.DrawIndexed(_indexBufferOffset / sizeof(uint32_t), 1, 0, 0, 0);
   renderPass.End();
 

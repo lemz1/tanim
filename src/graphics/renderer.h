@@ -21,8 +21,11 @@ class Renderer
 
   void DrawQuad(float x, float y);
 
-  void
-  Flush(const wgpu::TextureView& view, const wgpu::RenderPipeline& pipeline);
+  void Flush(
+    const wgpu::TextureView& view,
+    const wgpu::RenderPipeline& pipeline,
+    const wgpu::BindGroup& bindGroup
+  );
 
   const wgpu::VertexState& VertexState() const
   {
