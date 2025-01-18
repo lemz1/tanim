@@ -38,19 +38,13 @@ jobs:
               libxcursor-dev \
               mesa-common-dev 
 
-      - name: Set up Clang
-        if: matrix.os == 'macos-latest'
-        run: |
-          echo "CC=clang" >> $GITHUB_ENV
-          echo "CXX=clang++" >> $GITHUB_ENV
-
-
       - name: Install vcpkg
         uses: lukka/run-vcpkg@v11
         with:
           vcpkgGitCommitId: 'cf035d9916a0a23042b41fcae7ee0386d245af08'
 
       - name: Install Freetype
+        if: matrix.os != 'macos-latest'
         run: |
           vcpkg install Freetype
           vcpkg integrate install
