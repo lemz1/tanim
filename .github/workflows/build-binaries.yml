@@ -59,8 +59,7 @@ jobs:
       - name: Build (Windows)
         if: matrix.os == 'windows-latest'
         run: |
-          cmake -G "Visual Studio 17 2022" -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_SYSTEM_VERSION="10.0.22621.0"
-          cmake --build build --config Release
+          build-release.bat
 
       - name: Build (Linux/MacOS)
         if: matrix.os != 'windows-latest'
