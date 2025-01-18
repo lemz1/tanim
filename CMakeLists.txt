@@ -17,22 +17,24 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${OUTPUT_DIR}")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${OUTPUT_DIR}")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${OUTPUT_DIR}")
 
-set(SOURCES 
-  src/main.cpp
-  src/platform/glfw_wgpu_surface.cpp
-  src/graphics/renderer.cpp
+set(TANIM_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
+set(TANIM_SOURCES 
+  ${TANIM_DIR}/src/main.cpp
+  ${TANIM_DIR}/src/platform/glfw_wgpu_surface.cpp
+  ${TANIM_DIR}/src/graphics/renderer.cpp
 )
 
 if (APPLE)
-  list(APPEND SOURCES src/platform/glfw_wgpu_surface_metal.mm)
+  list(APPEND TANIM_SOURCES ${TANIM_DIR}/src/platform/glfw_wgpu_surface_metal.mm)
 endif ()
 
-set(HEADERS
-  src/platform/glfw_wgpu_surface.h
-  src/graphics/renderer.h
+set(TANIM_HEADERS
+  ${TANIM_DIR}/src/platform/glfw_wgpu_surface.h
+  ${TANIM_DIR}/src/graphics/renderer.h
 )
 
-add_executable(tanim ${SOURCES} ${HEADERS})
+add_executable(tanim ${TANIM_SOURCES} ${TANIM_HEADERS})
 
 # Dawn
 
@@ -72,4 +74,4 @@ endif ()
 
 # GLM
 
-target_include_directories(tanim PRIVATE ${CMAKE_SOURCE_DIR}/vnd/glm)
+target_include_directories(tanim PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/vnd/glm)
