@@ -75,3 +75,13 @@ endif ()
 # GLM
 
 target_include_directories(tanim PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/vnd/glm)
+
+# MSDFGen
+
+set(MSDFGEN_DISABLE_SVG ON)
+set(MSDFGEN_DISABLE_PNG ON)
+set(MSDFGEN_USE_SKIA OFF)
+set(MSDFGEN_BUILD_STANDALONE OFF)
+add_subdirectory(vnd/msdfgen)
+target_link_libraries(tanim PRIVATE msdfgen::msdfgen-core)
+target_link_libraries(tanim PRIVATE msdfgen::msdfgen-ext)
