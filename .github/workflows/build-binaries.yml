@@ -37,6 +37,9 @@ jobs:
               libxcursor-dev \
               mesa-common-dev 
 
+      - name: Install vcpkg
+        uses: lukka/run-vcpkg@v11
+
       - name: Checkout
         uses: actions/checkout@v3
 
