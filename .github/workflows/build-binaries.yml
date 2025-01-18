@@ -38,6 +38,13 @@ jobs:
               libxcursor-dev \
               mesa-common-dev 
 
+      - name: Set up Clang
+        if: matrix.os == 'macos-latest'
+        run: |
+          echo "CC=clang" >> $GITHUB_ENV
+          echo "CXX=clang++" >> $GITHUB_ENV
+
+
       - name: Install vcpkg
         uses: lukka/run-vcpkg@v11
         with:
