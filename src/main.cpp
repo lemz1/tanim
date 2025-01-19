@@ -1,5 +1,7 @@
 #include <GLFW/glfw3.h>
 #include <dawn/webgpu_cpp_print.h>
+#include <msdfgen-ext.h>
+#include <msdfgen.h>
 #include <webgpu/webgpu_cpp.h>
 
 #include <iostream>
@@ -8,11 +10,36 @@
 #include "graphics/renderer.h"
 #include "platform/glfw_wgpu_surface.h"
 
+using namespace msdfgen;
+
 constexpr uint32_t windowWidth = 1280;
 constexpr uint32_t windowHeight = 720;
 
 int main()
 {
+  auto scale = Vector2(1, 1);
+  auto translate = Vector2(0, 0);
+  auto pxRange = Range(2);
+  auto range = pxRange / min(scale.x, scale.y);
+  Bitmap<float, 4> msdf(16, 16);
+
+  if (FreetypeHandle* ft = initializeFreetype())
+  {
+    if (FontHandle* font = loadFont(ft, "C:\\Windows\\Fonts\\arialbd.ttf"))
+    {
+      Shape shape;
+      if (loadGlyph(shape, font, 'A', FONT_SCALING_EM_NORMALIZED))
+      {
+        shape.normalize();
+        edgeColoringSimple(shape, 3.0);
+        SDFTransformation t(Projection(scale, translate), range);
+        generateMTSDF(msdf, shape, t);
+      }
+      destroyFont(font);
+    }
+    deinitializeFreetype(ft);
+  }
+
   if (!glfwInit())
   {
     std::cerr << "[GLFW] Could not initialize GLFW" << std::endl;
