@@ -7,6 +7,3 @@
 [submodule "vnd/glm"]
 	path = vnd/glm
 	url = https://github.com/g-truc/glm.git
-[submodule "vnd/msdfgen"]
-	path = vnd/msdfgen
-	url = https://github.com/Chlumsky/msdfgen.git
