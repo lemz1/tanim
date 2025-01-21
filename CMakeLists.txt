@@ -36,6 +36,14 @@ set(TANIM_HEADERS
 
 add_executable(tanim ${TANIM_SOURCES} ${TANIM_HEADERS})
 
+# Assets
+
+add_custom_command(TARGET tanim POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+  ${TANIM_DIR}/assets
+  $<TARGET_FILE_DIR:tanim>/assets
+)
+
 # Shared Library RPATH
 
 if (UNIX AND NOT APPLE)
@@ -89,3 +97,7 @@ endif ()
 # GLM
 
 target_include_directories(tanim PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/vnd/glm)
+
+# JSON
+
+target_include_directories(tanim PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/vnd/json/single_include)

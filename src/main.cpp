@@ -2,7 +2,10 @@
 #include <dawn/webgpu_cpp_print.h>
 #include <webgpu/webgpu_cpp.h>
 
+#include <fstream>
 #include <iostream>
+#include <nlohmann/json.hpp>
+#include <optional>
 #include <vector>
 
 #include "graphics/renderer.h"
@@ -11,8 +14,30 @@
 constexpr uint32_t windowWidth = 1280;
 constexpr uint32_t windowHeight = 720;
 
+std::optional<nlohmann::json> ReadJson(std::string_view path)
+{
+  std::ifstream file(path.data());
+  if (!file.is_open())
+  {
+    std::cerr << "Could not open file" << std::endl;
+    return std::nullopt;
+  }
+
+  nlohmann::json json;
+  file >> json;
+
+  return json;
+}
+
 int main()
 {
+  if (auto jsonOpt =
+        ReadJson("assets/fonts/ARIALNB.TTF-msdf/ARIALNB.TTF-msdf.json"))
+  {
+    auto& json = *jsonOpt;
+    std::cout << json["pages"] << std::endl;
+  }
+
   if (!glfwInit())
   {
     std::cerr << "[GLFW] Could not initialize GLFW" << std::endl;
