@@ -36,6 +36,20 @@ set(TANIM_HEADERS
 
 add_executable(tanim ${TANIM_SOURCES} ${TANIM_HEADERS})
 
+# Shared Library RPATH
+
+if (UNIX AND NOT APPLE)
+  set_target_properties(tanim PROPERTIES
+    BUILD_RPATH "$ORIGIN"
+    INSTALL_RPATH "$ORIGIN"
+  )
+elseif (APPLE)
+  set_target_properties(tanim PROPERTIES
+    BUILD_RPATH "@loader_path"
+    INSTALL_RPATH "@loader_path"
+  )
+endif ()
+
 # Dawn
 
 if (WIN32)
