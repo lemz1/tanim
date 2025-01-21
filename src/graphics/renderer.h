@@ -3,7 +3,10 @@
 #include <webgpu/webgpu_cpp.h>
 
 #include <array>
+#include <filesystem>
 #include <glm/glm.hpp>
+
+#include "font.h"
 
 namespace graphics
 {
@@ -27,6 +30,8 @@ class Renderer
     const wgpu::BindGroup& bindGroup
   );
 
+  const graphics::Font& Font(const std::filesystem::path& path);
+
   const wgpu::VertexState& VertexState() const
   {
     return _vertexState;
@@ -44,6 +49,8 @@ class Renderer
   size_t _vertexBufferOffset = 0;
   size_t _indexBufferOffset = 0;
   uint32_t _indexValueOffset = 0;
+
+  std::unordered_map<std::filesystem::path, graphics::Font> _fonts;
 
   const wgpu::Device& _device;
   wgpu::Queue _queue;

@@ -23,6 +23,7 @@ set(TANIM_SOURCES
   ${TANIM_DIR}/src/main.cpp
   ${TANIM_DIR}/src/platform/glfw_wgpu_surface.cpp
   ${TANIM_DIR}/src/graphics/renderer.cpp
+  ${TANIM_DIR}/src/graphics/font.cpp
 )
 
 if (APPLE)
@@ -32,6 +33,7 @@ endif ()
 set(TANIM_HEADERS
   ${TANIM_DIR}/src/platform/glfw_wgpu_surface.h
   ${TANIM_DIR}/src/graphics/renderer.h
+  ${TANIM_DIR}/src/graphics/font.h
 )
 
 add_executable(tanim ${TANIM_SOURCES} ${TANIM_HEADERS})

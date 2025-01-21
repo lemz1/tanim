@@ -1,5 +1,7 @@
 #include "renderer.h"
 
+#include <fstream>
+
 namespace graphics
 {
 constexpr size_t vertexBufferSize = 1000 * sizeof(Vertex);
@@ -165,5 +167,16 @@ void Renderer::Flush(
   _vertexBufferOffset = 0;
   _indexBufferOffset = 0;
   _indexValueOffset = 0;
+}
+
+const graphics::Font& Renderer::Font(const std::filesystem::path& path)
+{
+  if (_fonts.find(path) != _fonts.end())
+  {
+    return _fonts.at(path);
+  }
+
+  _fonts.insert({path, graphics::Font(path)});
+  return _fonts.at(path);
 }
 }  // namespace graphics
