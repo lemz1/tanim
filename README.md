@@ -5,4 +5,4 @@ You can download the compiled program [here](https://github.com/lemz1/tanim/acti
 ### NOTE
 
 MacOS:
-The program isn't signed, meaning you need to give it permission to run.
+The program isn't signed, meaning you might need to give it permission to run.
