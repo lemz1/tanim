@@ -1,5 +1,7 @@
 #pragma once
 
+#include <webgpu/webgpu_cpp.h>
+
 #include <filesystem>
 #include <glm/glm.hpp>
 #include <nlohmann/json.hpp>
@@ -27,7 +29,11 @@ struct FontCharacter
 class Font
 {
  public:
-  Font(const std::filesystem::path& directory);
+  Font(
+    const wgpu::Device& device,
+    const wgpu::Queue& queue,
+    const std::filesystem::path& directory
+  );
   ~Font() = default;
 
   const auto& operator[](const std::string& character) const
@@ -45,7 +51,19 @@ class Font
     return _characters;
   }
 
+  const auto& Atlas() const
+  {
+    return _atlas;
+  }
+
+  const auto& AtlasView() const
+  {
+    return _atlasView;
+  }
+
  private:
   std::unordered_map<std::string, FontCharacter> _characters = {};
+  wgpu::Texture _atlas;
+  wgpu::TextureView _atlasView;
 };
 }  // namespace graphics

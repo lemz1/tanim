@@ -19,7 +19,7 @@ struct Vertex
 class Renderer
 {
  public:
-  Renderer(const wgpu::Device& device);
+  Renderer(const wgpu::Device& device, const wgpu::Queue& queue);
   ~Renderer();
 
   void DrawQuad(float x, float y);
@@ -53,6 +53,6 @@ class Renderer
   std::unordered_map<std::filesystem::path, graphics::Font> _fonts;
 
   const wgpu::Device& _device;
-  wgpu::Queue _queue;
+  const wgpu::Queue& _queue;
 };
 }  // namespace graphics

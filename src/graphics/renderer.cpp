@@ -7,10 +7,9 @@ namespace graphics
 constexpr size_t vertexBufferSize = 1000 * sizeof(Vertex);
 constexpr size_t indexBufferSize = vertexBufferSize * 2;
 
-Renderer::Renderer(const wgpu::Device& device) : _device(device)
+Renderer::Renderer(const wgpu::Device& device, const wgpu::Queue& queue)
+  : _device(device), _queue(queue)
 {
-  _queue = _device.GetQueue();
-
   wgpu::BufferDescriptor vertexBufferDescriptor{};
   vertexBufferDescriptor.label = "Renderer Vertex Buffer";
   vertexBufferDescriptor.size = vertexBufferSize;
@@ -80,19 +79,19 @@ void Renderer::DrawQuad(float x, float y)
   std::vector<Vertex> vertices = {
     {
       {-0.5f + x, -0.5f + y, +0.0f},
-      {+0.0f, +0.0f},
-    },
-    {
-      {+0.5f + x, -0.5f + y, +0.0f},
-      {+1.0f, +0.0f},
-    },
-    {
-      {-0.5f + x, +0.5f + y, +0.0f},
       {+0.0f, +1.0f},
     },
     {
-      {+0.5f + x, +0.5f + y, +0.0f},
+      {+0.5f + x, -0.5f + y, +0.0f},
       {+1.0f, +1.0f},
+    },
+    {
+      {-0.5f + x, +0.5f + y, +0.0f},
+      {+0.0f, +0.0f},
+    },
+    {
+      {+0.5f + x, +0.5f + y, +0.0f},
+      {+1.0f, +0.0f},
     },
   };
   _queue.WriteBuffer(
@@ -155,7 +154,8 @@ void Renderer::Flush(
     _indexBufferOffset
   );
   renderPass.SetBindGroup(0, bindGroup);
-  renderPass.DrawIndexed(_indexBufferOffset / sizeof(uint32_t), 1, 0, 0, 0);
+  renderPass
+    .DrawIndexed((uint32_t)(_indexBufferOffset / sizeof(uint32_t)), 1, 0, 0, 0);
   renderPass.End();
 
   wgpu::CommandBufferDescriptor commandDescriptor{};
@@ -176,7 +176,7 @@ const graphics::Font& Renderer::Font(const std::filesystem::path& path)
     return _fonts.at(path);
   }
 
-  _fonts.insert({path, graphics::Font(path)});
+  _fonts.insert({path, graphics::Font(_device, _queue, path)});
   return _fonts.at(path);
 }
 }  // namespace graphics

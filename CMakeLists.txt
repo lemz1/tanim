@@ -21,6 +21,7 @@ set(TANIM_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(TANIM_SOURCES 
   ${TANIM_DIR}/src/main.cpp
+  ${TANIM_DIR}/src/vendor.cpp
   ${TANIM_DIR}/src/platform/glfw_wgpu_surface.cpp
   ${TANIM_DIR}/src/graphics/renderer.cpp
   ${TANIM_DIR}/src/graphics/font.cpp
@@ -37,6 +38,8 @@ set(TANIM_HEADERS
 )
 
 add_executable(tanim ${TANIM_SOURCES} ${TANIM_HEADERS})
+
+target_include_directories(tanim PRIVATE ${TANIM_DIR}/src)
 
 # Assets
 
@@ -98,8 +101,12 @@ endif ()
 
 # GLM
 
-target_include_directories(tanim PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/vnd/glm)
+target_include_directories(tanim PRIVATE ${TANIM_DIR}/vnd/glm)
 
 # JSON
 
-target_include_directories(tanim PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/vnd/json/single_include)
+target_include_directories(tanim PRIVATE ${TANIM_DIR}/vnd/json/single_include)
+
+# STB
+
+target_include_directories(tanim PRIVATE ${TANIM_DIR}/vnd/stb)

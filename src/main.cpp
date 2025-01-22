@@ -148,7 +148,7 @@ int main()
   surfaceConfig.alphaMode = wgpu::CompositeAlphaMode::Auto;
   surface.Configure(&surfaceConfig);
 
-  auto renderer = graphics::Renderer(device);
+  auto renderer = graphics::Renderer(device, queue);
 
   auto& font = renderer.Font("assets/fonts/ARIALNB.TTF-msdf");
 
@@ -241,7 +241,7 @@ int main()
   auto textureView = texture.CreateView(&textureViewDescriptor);
 
   bindGroupEntries[0] = {};
-  bindGroupEntries[0].textureView = textureView;
+  bindGroupEntries[0].textureView = font.AtlasView();
   bindGroupEntries[0].binding = 0;
 
   bindGroupEntries[1] = {};
@@ -264,7 +264,30 @@ int main()
       @location(0) texCoord: vec2f,
     };
 
+    fn sampleMsdf(texCoord: vec2f) -> f32 {
+      let c = textureSample(tex, texSampler, texCoord);
+      return max(min(c.r, c.g), min(max(c.r, c.g), c.b));
+    }
+
     @fragment fn fsMain(in: VertexOutput) -> @location(0) vec4f {
+      let pxRange = 4.0;
+      let sz = vec2f(textureDimensions(tex, 0));
+      let dx = sz.x*length(vec2f(dpdxFine(in.texCoord.x), dpdyFine(in.texCoord.x)));
+      let dy = sz.y*length(vec2f(dpdxFine(in.texCoord.y), dpdyFine(in.texCoord.y)));
+      let toPixels = pxRange * inverseSqrt(dx * dx + dy * dy);
+      let sigDist = sampleMsdf(in.texCoord) - 0.5;
+      let pxDist = sigDist * toPixels;
+
+      let edgeWidth = 0.5;
+
+      let alpha = smoothstep(-edgeWidth, edgeWidth, pxDist);
+
+      if (alpha < 0.001) {
+        discard;
+      }
+
+      return vec4f(1.0, 0.0, 0.0, alpha);
+
       //return vec4f(in.texCoord, 0.0, 1.0);
       return textureSample(tex, texSampler, in.texCoord);
     }
@@ -281,8 +304,18 @@ int main()
   wgpu::ShaderModule shaderModule =
     device.CreateShaderModule(&shaderModuleDescriptor);
 
+  wgpu::BlendState blendState{};
+  blendState.alpha.srcFactor = wgpu::BlendFactor::One;
+  blendState.alpha.dstFactor = wgpu::BlendFactor::OneMinusSrcAlpha;
+  blendState.alpha.operation = wgpu::BlendOperation::Add;
+  blendState.color.srcFactor = wgpu::BlendFactor::SrcAlpha;
+  blendState.color.dstFactor = wgpu::BlendFactor::OneMinusSrcAlpha;
+  blendState.color.operation = wgpu::BlendOperation::Add;
+
   wgpu::ColorTargetState colorTargetState{};
   colorTargetState.format = surfaceFormat;
+  colorTargetState.blend = &blendState;
+  colorTargetState.writeMask = wgpu::ColorWriteMask::All;
 
   wgpu::FragmentState fragmentState{};
   fragmentState.module = shaderModule;
