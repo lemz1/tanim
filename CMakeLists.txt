@@ -86,6 +86,7 @@ target_link_libraries(tanim PRIVATE dawn::webgpu_dawn)
 
 if(APPLE)
     add_custom_command(TARGET tanim POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:tanim>/../Frameworks
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         $<TARGET_FILE:dawn::webgpu_dawn>
         $<TARGET_FILE_DIR:tanim>/../Frameworks/
