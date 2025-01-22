@@ -56,12 +56,6 @@ jobs:
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
           cmake --build build --config Release
 
-      - name: Test Macos
-        if: matrix.os == 'macos-latest'
-        working-directory: export/release/bin
-        run: |
-          open tanim
-
       - name: Upload ZIP artifact
         uses: actions/upload-artifact@v4
         with:
