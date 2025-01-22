@@ -40,11 +40,19 @@ add_executable(tanim ${TANIM_SOURCES} ${TANIM_HEADERS})
 
 # Assets
 
+if(APPLE)
+add_custom_command(TARGET tanim POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+  ${TANIM_DIR}/assets
+  $<TARGET_FILE_DIR:tanim>/../Resources/assets
+)
+else()
 add_custom_command(TARGET tanim POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_directory
   ${TANIM_DIR}/assets
   $<TARGET_FILE_DIR:tanim>/assets
 )
+endif()
 
 # Shared Library RPATH
 
@@ -54,10 +62,12 @@ if (UNIX AND NOT APPLE)
     INSTALL_RPATH "$ORIGIN"
   )
 elseif (APPLE)
-  set_target_properties(tanim PROPERTIES
-    BUILD_RPATH "@loader_path"
-    INSTALL_RPATH "@loader_path"
-  )
+    set_target_properties(tanim PROPERTIES
+        MACOSX_BUNDLE TRUE
+        MACOSX_FRAMEWORK_IDENTIFIER com.lemz1.tanim
+        BUILD_WITH_INSTALL_RPATH TRUE
+        INSTALL_RPATH "@executable_path/../Frameworks"
+    )
 endif ()
 
 # Dawn
@@ -74,11 +84,20 @@ find_package(Dawn REQUIRED)
 
 target_link_libraries(tanim PRIVATE dawn::webgpu_dawn)
 
-add_custom_command(TARGET tanim POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-  $<TARGET_FILE:dawn::webgpu_dawn>
-  $<TARGET_FILE_DIR:tanim>
-)
+if(APPLE)
+    add_custom_command(TARGET tanim POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:dawn::webgpu_dawn>
+        $<TARGET_FILE_DIR:tanim>/../Frameworks/
+    )
+else()
+    add_custom_command(TARGET tanim POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:dawn::webgpu_dawn>
+        $<TARGET_FILE_DIR:tanim>
+    )
+endif()
+
 
 # GLFW
 
