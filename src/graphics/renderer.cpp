@@ -28,7 +28,7 @@ Renderer::Renderer(const wgpu::Device& device, const wgpu::Queue& queue)
   _vertexAttributes[0].offset = offsetof(Vertex, position);
   _vertexAttributes[0].shaderLocation = 0;
   _vertexAttributes[1].format = wgpu::VertexFormat::Float32x2;
-  _vertexAttributes[1].offset = offsetof(Vertex, texCoord);
+  _vertexAttributes[1].offset = offsetof(Vertex, uv);
   _vertexAttributes[1].shaderLocation = 1;
 
   _vertexBufferLayout.attributeCount = _vertexAttributes.size();
@@ -39,18 +39,18 @@ Renderer::Renderer(const wgpu::Device& device, const wgpu::Queue& queue)
   const char* shaderCode = R"(
     struct VertexInput {
       @location(0) position: vec3f,
-      @location(1) texCoord: vec2f,
+      @location(1) uv: vec2f,
     };
 
     struct VertexOutput {
       @builtin(position) position: vec4f,
-      @location(0) texCoord: vec2f,
+      @location(0) uv: vec2f,
     };
 
     @vertex fn vsMain(in: VertexInput) -> VertexOutput {
       var out: VertexOutput;
       out.position = vec4f(in.position, 1.0);
-      out.texCoord = in.texCoord;
+      out.uv = in.uv;
       return out;
     }
 )";

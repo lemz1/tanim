@@ -261,21 +261,21 @@ int main()
     @group(0) @binding(1) var texSampler: sampler;
 
     struct VertexOutput {
-      @location(0) texCoord: vec2f,
+      @location(0) uv: vec2f,
     };
 
-    fn sampleMsdf(texCoord: vec2f) -> f32 {
-      let c = textureSample(tex, texSampler, texCoord);
+    fn sampleMsdf(uv: vec2f) -> f32 {
+      let c = textureSample(tex, texSampler, uv);
       return max(min(c.r, c.g), min(max(c.r, c.g), c.b));
     }
 
     @fragment fn fsMain(in: VertexOutput) -> @location(0) vec4f {
       let pxRange = 4.0;
       let sz = vec2f(textureDimensions(tex, 0));
-      let dx = sz.x*length(vec2f(dpdxFine(in.texCoord.x), dpdyFine(in.texCoord.x)));
-      let dy = sz.y*length(vec2f(dpdxFine(in.texCoord.y), dpdyFine(in.texCoord.y)));
+      let dx = sz.x*length(vec2f(dpdxFine(in.uv.x), dpdyFine(in.uv.x)));
+      let dy = sz.y*length(vec2f(dpdxFine(in.uv.y), dpdyFine(in.uv.y)));
       let toPixels = pxRange * inverseSqrt(dx * dx + dy * dy);
-      let sigDist = sampleMsdf(in.texCoord) - 0.5;
+      let sigDist = sampleMsdf(in.uv) - 0.5;
       let pxDist = sigDist * toPixels;
 
       let edgeWidth = 0.5;
@@ -288,8 +288,8 @@ int main()
 
       return vec4f(1.0, 0.0, 0.0, alpha);
 
-      //return vec4f(in.texCoord, 0.0, 1.0);
-      return textureSample(tex, texSampler, in.texCoord);
+      //return vec4f(in.uv, 0.0, 1.0);
+      return textureSample(tex, texSampler, in.uv);
     }
 )";
 

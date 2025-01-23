@@ -5,23 +5,25 @@
 #include <filesystem>
 #include <glm/glm.hpp>
 #include <nlohmann/json.hpp>
-#include <string>
 #include <unordered_map>
 
 namespace graphics
 {
-struct FontBounds
+using FontUnicode = uint32_t;
+
+struct FontUVBounds
 {
-  uint32_t x;
-  uint32_t y;
-  uint32_t width;
-  uint32_t height;
+  float left;
+  float right;
+  float top;
+  float bottom;
 };
 
 struct FontCharacter
 {
-  FontBounds bounds;
-  glm::ivec2 offset;
+  FontUVBounds bounds;
+  glm::vec2 size;
+  glm::vec2 offset;
   uint32_t page;
   int advance;
 };
@@ -36,14 +38,24 @@ class Font
   );
   ~Font() = default;
 
-  const auto& operator[](const std::string& character) const
+  const auto& operator[](FontUnicode unicode) const
   {
-    return _characters.at(character);
+    return _characters.at(unicode);
   }
 
-  const auto& Character(const std::string& character) const
+  const auto& Character(FontUnicode unicode) const
   {
-    return _characters.at(character);
+    return _characters.at(unicode);
+  }
+
+  const auto& operator[](char c) const
+  {
+    return _characters.at((uint32_t)c);
+  }
+
+  const auto& Character(char c) const
+  {
+    return _characters.at((uint32_t)c);
   }
 
   const auto& Characters() const
@@ -62,7 +74,7 @@ class Font
   }
 
  private:
-  std::unordered_map<std::string, FontCharacter> _characters = {};
+  std::unordered_map<FontUnicode, FontCharacter> _characters = {};
   wgpu::Texture _atlas;
   wgpu::TextureView _atlasView;
 };

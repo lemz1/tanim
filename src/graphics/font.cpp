@@ -23,21 +23,25 @@ Font::Font(
   }
   auto json = nlohmann::json::parse(file);
 
+  float u = 1.0f / json["common"]["scaleW"];
+  float v = 1.0f / json["common"]["scaleH"];
+
   for (const auto& c : json["chars"])
   {
     FontCharacter character = {
       .bounds =
         {
-          .x = c["x"],
-          .y = c["y"],
-          .width = c["width"],
-          .height = c["height"],
+          .left = c["x"] * u,
+          .right = c["x"] * u + c["width"] * u,
+          .top = c["y"] * v,
+          .bottom = c["y"] * v + c["height"] * v,
         },
+      .size = {c["width"], c["height"]},
       .offset = {c["xoffset"], c["yoffset"]},
       .page = c["page"],
       .advance = c["xadvance"],
     };
-    _characters.insert({c["char"], character});
+    _characters.insert({c["id"], character});
   }
 
   auto atlasPath = directory / json["pages"][0];
