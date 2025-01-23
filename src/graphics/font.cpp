@@ -23,18 +23,18 @@ Font::Font(
   }
   auto json = nlohmann::json::parse(file);
 
-  float u = 1.0f / json["common"]["scaleW"];
-  float v = 1.0f / json["common"]["scaleH"];
+  float u = 1.0f / (float)json["common"]["scaleW"];
+  float v = 1.0f / (float)json["common"]["scaleH"];
 
   for (const auto& c : json["chars"])
   {
     FontCharacter character = {
       .bounds =
         {
-          .left = c["x"] * u,
-          .right = c["x"] * u + c["width"] * u,
-          .top = c["y"] * v,
-          .bottom = c["y"] * v + c["height"] * v,
+          .left = (float)c["x"] * u,
+          .right = (float)c["x"] * u + (float)c["width"] * u,
+          .top = (float)c["y"] * v,
+          .bottom = (float)c["y"] * v + (float)c["height"] * v,
         },
       .size = {c["width"], c["height"]},
       .offset = {c["xoffset"], c["yoffset"]},
