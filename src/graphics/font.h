@@ -9,8 +9,6 @@
 
 namespace graphics
 {
-using FontUnicode = uint32_t;
-
 struct FontUVBounds
 {
   float left;
@@ -38,29 +36,34 @@ class Font
   );
   ~Font() = default;
 
-  const auto& operator[](FontUnicode unicode) const
+  const auto& operator[](uint32_t unicode) const
   {
     return _characters.at(unicode);
   }
 
-  const auto& Character(FontUnicode unicode) const
+  const auto& Character(uint32_t unicode) const
   {
     return _characters.at(unicode);
-  }
-
-  const auto& operator[](char c) const
-  {
-    return _characters.at((uint32_t)c);
-  }
-
-  const auto& Character(char c) const
-  {
-    return _characters.at((uint32_t)c);
   }
 
   const auto& Characters() const
   {
     return _characters;
+  }
+
+  auto Kerning(uint32_t firstUnicode, uint32_t secondUnicode) const
+  {
+    auto it = _kernings.find(KerningKey(firstUnicode, secondUnicode));
+    if (it == _kernings.end())
+    {
+      return 0.0f;
+    }
+    return it->second;
+  }
+
+  const auto& Kernings() const
+  {
+    return _kernings;
   }
 
   const auto& Atlas() const
@@ -74,7 +77,14 @@ class Font
   }
 
  private:
-  std::unordered_map<FontUnicode, FontCharacter> _characters = {};
+  uint64_t KerningKey(uint32_t firstUnicode, uint32_t secondUnicode) const
+  {
+    return (uint64_t)firstUnicode << 32 | secondUnicode;
+  }
+
+ private:
+  std::unordered_map<uint32_t, FontCharacter> _characters = {};
+  std::unordered_map<uint64_t, float> _kernings = {};
   wgpu::Texture _atlas;
   wgpu::TextureView _atlasView;
 };

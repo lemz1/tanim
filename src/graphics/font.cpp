@@ -44,6 +44,11 @@ Font::Font(
     _characters.insert({c["id"], character});
   }
 
+  for (const auto& k : json["kernings"])
+  {
+    _kernings.insert({KerningKey(k["first"], k["second"]), k["amount"]});
+  }
+
   auto atlasPath = directory / json["pages"][0];
 
   int width, height, channels;

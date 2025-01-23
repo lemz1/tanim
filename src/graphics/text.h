@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <string>
 
 #include "font.h"
@@ -20,13 +21,13 @@ class Text
     const wgpu::Device& device,
     const wgpu::Queue& queue,
     std::string_view text,
-    const Font* font
+    const Font& font
   );
   ~Text() = default;
 
   void SetText(std::string_view text);
 
-  void SetFont(const Font* font);
+  void SetFont(const Font& font);
 
   const auto& GetText() const
   {
@@ -47,10 +48,12 @@ class Text
   const wgpu::Queue& _queue;
 
   std::string _text;
-  const Font* _font;
+  std::reference_wrapper<const Font> _font;
   wgpu::Buffer _characterBuffer;
 };
 }  // namespace graphics
+
+// TODO:
 
 /* Result from the below comments
 

@@ -6,7 +6,7 @@ Text::Text(
   const wgpu::Device& device,
   const wgpu::Queue& queue,
   std::string_view text,
-  const Font* font
+  const Font& font
 )
   : _device(device), _queue(queue), _text(text), _font(font)
 {
@@ -29,9 +29,9 @@ void Text::SetText(std::string_view text)
   FillBuffer();
 }
 
-void Text::SetFont(const Font* font)
+void Text::SetFont(const Font& font)
 {
-  if (_font == font)
+  if (&_font.get() == &font)
   {
     return;
   }
@@ -52,18 +52,32 @@ void Text::CreateBuffer()
 
 void Text::FillBuffer()
 {
-  float cursor = 0;
-  for (auto c : _text)
-  {
-    auto& fontChar = _font->Character(c);
+  std::vector<TextCharacter> textChars(_text.length());
 
-    TextCharacter textChar{};
+  float cursor = 0;
+  for (size_t i = 0; i < _text.length(); i++)
+  {
+    auto& fontChar = _font.get().Character(_text.at(i));
+
+    auto& textChar = textChars.at(i);
     textChar.bounds = fontChar.bounds;
     textChar.size = fontChar.size;
     textChar.position.x = cursor + fontChar.offset.x;
     textChar.position.y = fontChar.offset.y;
 
+    if (i > 0)
+    {
+      textChar.position.x += _font.get().Kerning(_text.at(i - 1), _text.at(i));
+    }
+
     cursor += fontChar.advance;
   }
+
+  _queue.WriteBuffer(
+    _characterBuffer,
+    0,
+    textChars.data(),
+    textChars.size() * sizeof(TextCharacter)
+  );
 }
 }  // namespace graphics

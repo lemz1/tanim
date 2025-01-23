@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "graphics/renderer.h"
+#include "graphics/text.h"
 #include "platform/glfw_wgpu_surface.h"
 
 constexpr uint32_t windowWidth = 1280;
@@ -150,7 +151,9 @@ int main()
 
   auto renderer = graphics::Renderer(device, queue);
 
-  auto& font = renderer.Font("assets/fonts/ARIALNB.TTF-msdf");
+  auto& font = renderer.Font("assets/fonts/ARIALBD.TTF-msdf");
+
+  auto text = graphics::Text(device, queue, "hello world", font);
 
   wgpu::TextureDescriptor textureDescriptor{};
   textureDescriptor.label = "Texture";
