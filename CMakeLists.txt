@@ -123,6 +123,11 @@ endif ()
 
 # GLM
 
+target_compile_definitions(tanim PRIVATE 
+  GLM_FORCE_DEPTH_ZERO_TO_ONE 
+  GLM_FORCE_LEFT_HANDED
+  GLM_ENABLE_EXPERIMENTAL
+)
 target_include_directories(tanim PRIVATE ${TANIM_DIR}/vnd/glm)
 
 # JSON

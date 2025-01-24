@@ -185,15 +185,19 @@ void Renderer::CreateSamplers()
 
 void Renderer::CreateTextPipeline(wgpu::TextureFormat format)
 {
-  wgpu::BindGroupLayoutEntry vertexLayoutEntry{};
-  vertexLayoutEntry.binding = 0;
-  vertexLayoutEntry.visibility = wgpu::ShaderStage::Vertex;
-  vertexLayoutEntry.buffer.type = wgpu::BufferBindingType::ReadOnlyStorage;
+  std::array<wgpu::BindGroupLayoutEntry, 2> vertexLayoutEntries{};
+  vertexLayoutEntries[0].binding = 0;
+  vertexLayoutEntries[0].visibility = wgpu::ShaderStage::Vertex;
+  vertexLayoutEntries[0].buffer.type = wgpu::BufferBindingType::ReadOnlyStorage;
+
+  vertexLayoutEntries[1].binding = 1;
+  vertexLayoutEntries[1].visibility = wgpu::ShaderStage::Vertex;
+  vertexLayoutEntries[1].buffer.type = wgpu::BufferBindingType::Uniform;
 
   wgpu::BindGroupLayoutDescriptor vertexLayoutDescriptor{};
   vertexLayoutDescriptor.label = "Renderer Text Vertex Bind Group Layout";
-  vertexLayoutDescriptor.entryCount = 1;
-  vertexLayoutDescriptor.entries = &vertexLayoutEntry;
+  vertexLayoutDescriptor.entryCount = (uint32_t)vertexLayoutEntries.size();
+  vertexLayoutDescriptor.entries = vertexLayoutEntries.data();
   _textBindGroupLayouts[0] =
     _device.CreateBindGroupLayout(&vertexLayoutDescriptor);
 
@@ -216,6 +220,15 @@ void Renderer::CreateTextPipeline(wgpu::TextureFormat format)
     _device.CreateBindGroupLayout(&fragmentLayoutDescriptor);
 
   const char* shaderCode = R"(
+    const positions = array<vec2f, 4>(
+      vec2f(0.0, 0.0),
+      vec2f(1.0, 0.0),
+      vec2f(0.0, -1.0),
+      vec2f(1.0, -1.0)
+    );
+
+    const scalingFactor: f32 = 0.01;
+
     struct VertexInput {
       @builtin(vertex_index) vertexIndex: u32,
       @builtin(instance_index) instanceIndex: u32,
@@ -233,18 +246,15 @@ void Renderer::CreateTextPipeline(wgpu::TextureFormat format)
     };
 
     @group(0) @binding(0) var<storage, read> characters: array<TextCharacter>;
+    @group(0) @binding(1) var<uniform> viewProjection: mat4x4<f32>;
 
     @vertex fn vsMain(in: VertexInput) -> VertexOutput {
-      var positions = array<vec2f, 4>(
-        vec2f(0.0, 0.0),
-        vec2f(1.0, 0.0),
-        vec2f(0.0, -1.0),
-        vec2f(1.0, -1.0)
-      );
-
-      var position = positions[in.vertexIndex];
-
       var character = characters[in.instanceIndex];
+
+      var vertexPosition = positions[in.vertexIndex];
+      vertexPosition *= character.size;
+      vertexPosition += character.position;
+      vertexPosition *= scalingFactor;
 
       var uvs = array<vec2f, 4>(
         character.bounds.xz,
@@ -256,7 +266,7 @@ void Renderer::CreateTextPipeline(wgpu::TextureFormat format)
       var uv = uvs[in.vertexIndex];
 
       var out: VertexOutput;
-      out.position = vec4f((position * character.size + character.position) * 0.003, 0.0, 1.0);
+      out.position = viewProjection * vec4f(vertexPosition, 0.0, 1.0);
       out.uv = uv;
       return out;
     }

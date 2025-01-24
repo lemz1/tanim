@@ -4,6 +4,8 @@
 
 #include <filesystem>
 #include <fstream>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <optional>
@@ -153,17 +155,41 @@ int main()
 
   auto& font = renderer.Font("assets/fonts/ARIALBD.TTF-msdf");
 
-  auto text =
-    graphics::Text(device, queue, "Hello, World!\nBest Regards,\nLemZ", font);
+  auto text = graphics::Text(device, queue, "Hello, World!", font);
 
-  wgpu::BindGroupEntry vertexGroupEntry{};
-  vertexGroupEntry.buffer = text.Buffer();
-  vertexGroupEntry.binding = 0;
+  auto projectionMat = glm::perspectiveFov(
+    glm::radians(45.0f),
+    (float)windowWidth,
+    (float)windowHeight,
+    0.1f,
+    1000.0f
+  );
+
+  auto viewMat = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, -5.0f)) *
+                 glm::mat4_cast(glm::quat(glm::vec3(0.0f, 0.0f, 0.0f)));
+
+  auto viewProjection = projectionMat * glm::inverse(viewMat);
+
+  wgpu::BufferDescriptor uniformDescriptor{};
+  uniformDescriptor.label = "Text Uniform Buffer";
+  uniformDescriptor.size = sizeof(glm::mat4);
+  uniformDescriptor.usage =
+    wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst;
+  auto uniformBuffer = device.CreateBuffer(&uniformDescriptor);
+
+  queue.WriteBuffer(uniformBuffer, 0, &viewProjection, sizeof(glm::mat4));
+
+  std::vector<wgpu::BindGroupEntry> vertexGroupEntries(2);
+  vertexGroupEntries[0].buffer = text.Buffer();
+  vertexGroupEntries[0].binding = 0;
+
+  vertexGroupEntries[1].buffer = uniformBuffer;
+  vertexGroupEntries[1].binding = 1;
 
   wgpu::BindGroupDescriptor vertexGroupDescriptor{};
   vertexGroupDescriptor.label = "Vertex Bind Group";
-  vertexGroupDescriptor.entryCount = 1;
-  vertexGroupDescriptor.entries = &vertexGroupEntry;
+  vertexGroupDescriptor.entryCount = vertexGroupEntries.size();
+  vertexGroupDescriptor.entries = vertexGroupEntries.data();
   vertexGroupDescriptor.layout = renderer.TextVertexBindGroupLayout();
   auto vertexGroup = device.CreateBindGroup(&vertexGroupDescriptor);
 
@@ -180,9 +206,15 @@ int main()
   fragmentGroupDescriptor.layout = renderer.TextFragmentBindGroupLayout();
   auto fragmentGroup = device.CreateBindGroup(&fragmentGroupDescriptor);
 
+  float time = 0.0;
+
   while (!glfwWindowShouldClose(window))
   {
     glfwPollEvents();
+
+    float newTime = (float)glfwGetTime();
+    float deltaTime = newTime - time;
+    time = newTime;
 
     wgpu::SurfaceTexture surfaceTexture;
     surface.GetCurrentTexture(&surfaceTexture);
