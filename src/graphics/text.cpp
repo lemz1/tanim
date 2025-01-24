@@ -52,32 +52,49 @@ void Text::CreateBuffer()
 
 void Text::FillBuffer()
 {
-  std::vector<TextCharacter> textChars(_text.length());
+  std::vector<TextCharacter> textChars;
+  textChars.reserve(_text.length());
 
-  float cursor = 0;
+  _characterCount = 0;
+  glm::vec2 cursor{0, 0};
   for (size_t i = 0; i < _text.length(); i++)
   {
+    if (_text.at(i) == ' ')
+    {
+      cursor.x += _font.get().Character(' ').advance;
+      continue;
+    }
+    else if (_text.at(i) == '\n')
+    {
+      cursor.x = 0;
+      cursor.y -= _font.get().LineHeight();
+      continue;
+    }
+
     auto& fontChar = _font.get().Character(_text.at(i));
 
-    auto& textChar = textChars.at(i);
+    TextCharacter textChar{};
     textChar.bounds = fontChar.bounds;
     textChar.size = fontChar.size;
-    textChar.position.x = cursor + fontChar.offset.x;
-    textChar.position.y = fontChar.offset.y;
+    textChar.position.x = cursor.x + fontChar.offset.x;
+    textChar.position.y = cursor.y - fontChar.offset.y;
 
     if (i > 0)
     {
       textChar.position.x += _font.get().Kerning(_text.at(i - 1), _text.at(i));
     }
 
-    cursor += fontChar.advance;
+    textChars.emplace_back(textChar);
+
+    cursor.x += fontChar.advance;
+    _characterCount++;
   }
 
   _queue.WriteBuffer(
     _characterBuffer,
     0,
     textChars.data(),
-    textChars.size() * sizeof(TextCharacter)
+    _characterCount * sizeof(TextCharacter)
   );
 }
 }  // namespace graphics

@@ -149,194 +149,36 @@ int main()
   surfaceConfig.alphaMode = wgpu::CompositeAlphaMode::Auto;
   surface.Configure(&surfaceConfig);
 
-  auto renderer = graphics::Renderer(device, queue);
+  auto renderer = graphics::Renderer(device, queue, surfaceFormat);
 
   auto& font = renderer.Font("assets/fonts/ARIALBD.TTF-msdf");
 
-  auto text = graphics::Text(device, queue, "hello world", font);
+  auto text =
+    graphics::Text(device, queue, "Hello, World!\nBest Regards,\nLemZ", font);
 
-  wgpu::TextureDescriptor textureDescriptor{};
-  textureDescriptor.label = "Texture";
-  textureDescriptor.dimension = wgpu::TextureDimension::e2D;
-  textureDescriptor.size = {32, 32, 1};
-  textureDescriptor.mipLevelCount = 1;
-  textureDescriptor.sampleCount = 1;
-  textureDescriptor.format = wgpu::TextureFormat::RGBA8Unorm;
-  textureDescriptor.usage =
-    wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::CopyDst;
-  auto texture = device.CreateTexture(&textureDescriptor);
+  wgpu::BindGroupEntry vertexGroupEntry{};
+  vertexGroupEntry.buffer = text.Buffer();
+  vertexGroupEntry.binding = 0;
 
-  std::vector<uint8_t> pixels(
-    4 * textureDescriptor.size.width * textureDescriptor.size.height
-  );
-  for (uint32_t i = 0; i < textureDescriptor.size.width; ++i)
-  {
-    for (uint32_t j = 0; j < textureDescriptor.size.height; ++j)
-    {
-      uint8_t* p = &pixels[4 * (j * textureDescriptor.size.width + i)];
-      p[0] = (uint8_t)i * 8;  // r
-      p[1] = (uint8_t)j * 8;  // g
-      p[2] = 128;             // b
-      p[3] = 255;             // a
-    }
-  }
+  wgpu::BindGroupDescriptor vertexGroupDescriptor{};
+  vertexGroupDescriptor.label = "Vertex Bind Group";
+  vertexGroupDescriptor.entryCount = 1;
+  vertexGroupDescriptor.entries = &vertexGroupEntry;
+  vertexGroupDescriptor.layout = renderer.TextVertexBindGroupLayout();
+  auto vertexGroup = device.CreateBindGroup(&vertexGroupDescriptor);
 
-  wgpu::ImageCopyTexture destination{};
-  destination.texture = texture;
-  destination.mipLevel = 0;
-  destination.origin = {0, 0, 0};
-  destination.aspect = wgpu::TextureAspect::All;
+  std::vector<wgpu::BindGroupEntry> fragmentGroupEntries(2);
+  fragmentGroupEntries[0].textureView = font.AtlasView();
+  fragmentGroupEntries[0].binding = 0;
+  fragmentGroupEntries[1].sampler = renderer.LinearSampler();
+  fragmentGroupEntries[1].binding = 1;
 
-  wgpu::TextureDataLayout source{};
-  source.offset = 0;
-  source.bytesPerRow = 4 * textureDescriptor.size.width;
-  source.rowsPerImage = textureDescriptor.size.height;
-
-  queue.WriteTexture(
-    &destination,
-    pixels.data(),
-    pixels.size(),
-    &source,
-    &textureDescriptor.size
-  );
-
-  wgpu::SamplerDescriptor samplerDescriptor{};
-  samplerDescriptor.label = "Sampler";
-  samplerDescriptor.minFilter = wgpu::FilterMode::Linear;
-  samplerDescriptor.magFilter = wgpu::FilterMode::Linear;
-  samplerDescriptor.addressModeU = wgpu::AddressMode::ClampToEdge;
-  samplerDescriptor.addressModeV = wgpu::AddressMode::ClampToEdge;
-  samplerDescriptor.addressModeW = wgpu::AddressMode::ClampToEdge;
-  auto sampler = device.CreateSampler(&samplerDescriptor);
-
-  std::vector<wgpu::BindGroupLayoutEntry> bindingLayoutEntries(2);
-
-  bindingLayoutEntries[0] = {};
-  bindingLayoutEntries[0].binding = 0;
-  bindingLayoutEntries[0].visibility = wgpu::ShaderStage::Fragment;
-  bindingLayoutEntries[0].texture.sampleType = wgpu::TextureSampleType::Float;
-  bindingLayoutEntries[0].texture.viewDimension =
-    wgpu::TextureViewDimension::e2D;
-
-  bindingLayoutEntries[1] = {};
-  bindingLayoutEntries[1].binding = 1;
-  bindingLayoutEntries[1].visibility = wgpu::ShaderStage::Fragment;
-  bindingLayoutEntries[1].sampler.type = wgpu::SamplerBindingType::Filtering;
-
-  wgpu::BindGroupLayoutDescriptor bindGroupLayoutDescriptor{};
-  bindGroupLayoutDescriptor.entryCount = (uint32_t)bindingLayoutEntries.size();
-  bindGroupLayoutDescriptor.entries = bindingLayoutEntries.data();
-  wgpu::BindGroupLayout bindGroupLayout =
-    device.CreateBindGroupLayout(&bindGroupLayoutDescriptor);
-
-  std::vector<wgpu::BindGroupEntry> bindGroupEntries(2);
-
-  wgpu::TextureViewDescriptor textureViewDescriptor{};
-  textureViewDescriptor.label = "Texture View";
-  textureViewDescriptor.format = wgpu::TextureFormat::RGBA8Unorm;
-  textureViewDescriptor.dimension = wgpu::TextureViewDimension::e2D;
-  textureViewDescriptor.usage = wgpu::TextureUsage::TextureBinding;
-  textureViewDescriptor.aspect = wgpu::TextureAspect::All;
-  textureViewDescriptor.baseArrayLayer = 0;
-  textureViewDescriptor.arrayLayerCount = 1;
-  textureViewDescriptor.baseMipLevel = 0;
-  textureViewDescriptor.mipLevelCount = 1;
-  auto textureView = texture.CreateView(&textureViewDescriptor);
-
-  bindGroupEntries[0] = {};
-  bindGroupEntries[0].textureView = font.AtlasView();
-  bindGroupEntries[0].binding = 0;
-
-  bindGroupEntries[1] = {};
-  bindGroupEntries[1].sampler = sampler;
-  bindGroupEntries[1].binding = 1;
-
-  wgpu::BindGroupDescriptor bindGroupDescriptor{};
-  bindGroupDescriptor.label = "Bind Group";
-  bindGroupDescriptor.entryCount = bindGroupEntries.size();
-  bindGroupDescriptor.entries = bindGroupEntries.data();
-  bindGroupDescriptor.layout = bindGroupLayout;
-
-  auto bindGroup = device.CreateBindGroup(&bindGroupDescriptor);
-
-  const char* shaderCode = R"(
-    @group(0) @binding(0) var tex: texture_2d<f32>;
-    @group(0) @binding(1) var texSampler: sampler;
-
-    struct VertexOutput {
-      @location(0) uv: vec2f,
-    };
-
-    fn sampleMsdf(uv: vec2f) -> f32 {
-      let c = textureSample(tex, texSampler, uv);
-      return max(min(c.r, c.g), min(max(c.r, c.g), c.b));
-    }
-
-    @fragment fn fsMain(in: VertexOutput) -> @location(0) vec4f {
-      let pxRange = 4.0;
-      let sz = vec2f(textureDimensions(tex, 0));
-      let dx = sz.x*length(vec2f(dpdxFine(in.uv.x), dpdyFine(in.uv.x)));
-      let dy = sz.y*length(vec2f(dpdxFine(in.uv.y), dpdyFine(in.uv.y)));
-      let toPixels = pxRange * inverseSqrt(dx * dx + dy * dy);
-      let sigDist = sampleMsdf(in.uv) - 0.5;
-      let pxDist = sigDist * toPixels;
-
-      let edgeWidth = 0.5;
-
-      let alpha = smoothstep(-edgeWidth, edgeWidth, pxDist);
-
-      if (alpha < 0.001) {
-        discard;
-      }
-
-      return vec4f(1.0, 0.0, 0.0, alpha);
-
-      //return vec4f(in.uv, 0.0, 1.0);
-      return textureSample(tex, texSampler, in.uv);
-    }
-)";
-
-  wgpu::ShaderModuleWGSLDescriptor wgslDescriptor{};
-  wgslDescriptor.code = shaderCode;
-  wgslDescriptor.sType = wgpu::SType::ShaderSourceWGSL;
-
-  wgpu::ShaderModuleDescriptor shaderModuleDescriptor{};
-  shaderModuleDescriptor.label = "Fragment Module";
-  shaderModuleDescriptor.nextInChain = &wgslDescriptor;
-
-  wgpu::ShaderModule shaderModule =
-    device.CreateShaderModule(&shaderModuleDescriptor);
-
-  wgpu::BlendState blendState{};
-  blendState.alpha.srcFactor = wgpu::BlendFactor::One;
-  blendState.alpha.dstFactor = wgpu::BlendFactor::OneMinusSrcAlpha;
-  blendState.alpha.operation = wgpu::BlendOperation::Add;
-  blendState.color.srcFactor = wgpu::BlendFactor::SrcAlpha;
-  blendState.color.dstFactor = wgpu::BlendFactor::OneMinusSrcAlpha;
-  blendState.color.operation = wgpu::BlendOperation::Add;
-
-  wgpu::ColorTargetState colorTargetState{};
-  colorTargetState.format = surfaceFormat;
-  colorTargetState.blend = &blendState;
-  colorTargetState.writeMask = wgpu::ColorWriteMask::All;
-
-  wgpu::FragmentState fragmentState{};
-  fragmentState.module = shaderModule;
-  fragmentState.targetCount = 1;
-  fragmentState.targets = &colorTargetState;
-
-  wgpu::PipelineLayoutDescriptor pipelineLayoutDescriptor{};
-  pipelineLayoutDescriptor.bindGroupLayoutCount = 1;
-  pipelineLayoutDescriptor.bindGroupLayouts = &bindGroupLayout;
-  pipelineLayoutDescriptor.label = "Pipeline Layout";
-  auto pipelineLayout = device.CreatePipelineLayout(&pipelineLayoutDescriptor);
-
-  wgpu::RenderPipelineDescriptor pipelineDescriptor{};
-  pipelineDescriptor.fragment = &fragmentState;
-  pipelineDescriptor.vertex = renderer.VertexState();
-  pipelineDescriptor.layout = pipelineLayout;
-  wgpu::RenderPipeline pipeline =
-    device.CreateRenderPipeline(&pipelineDescriptor);
+  wgpu::BindGroupDescriptor fragmentGroupDescriptor{};
+  fragmentGroupDescriptor.label = "Fragment Bind Group";
+  fragmentGroupDescriptor.entryCount = fragmentGroupEntries.size();
+  fragmentGroupDescriptor.entries = fragmentGroupEntries.data();
+  fragmentGroupDescriptor.layout = renderer.TextFragmentBindGroupLayout();
+  auto fragmentGroup = device.CreateBindGroup(&fragmentGroupDescriptor);
 
   while (!glfwWindowShouldClose(window))
   {
@@ -356,9 +198,7 @@ int main()
     auto surfaceView =
       surfaceTexture.texture.CreateView(&textureViewDescriptor);
 
-    renderer.DrawQuad(-0.5f, +0.5f);
-    renderer.DrawQuad(+0.5f, -0.5f);
-    renderer.Flush(surfaceView, pipeline, bindGroup);
+    renderer.DrawText(text, surfaceView, vertexGroup, fragmentGroup);
 
     surface.Present();
   }

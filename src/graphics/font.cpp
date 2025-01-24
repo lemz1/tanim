@@ -23,6 +23,8 @@ Font::Font(
   }
   auto json = nlohmann::json::parse(file);
 
+  _lineHeight = json["common"]["lineHeight"];
+
   float u = 1.0f / (float)json["common"]["scaleW"];
   float v = 1.0f / (float)json["common"]["scaleH"];
 

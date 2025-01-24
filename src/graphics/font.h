@@ -36,22 +36,17 @@ class Font
   );
   ~Font() = default;
 
-  const auto& operator[](uint32_t unicode) const
+  const FontCharacter& operator[](uint32_t unicode) const
   {
     return _characters.at(unicode);
   }
 
-  const auto& Character(uint32_t unicode) const
+  const FontCharacter& Character(uint32_t unicode) const
   {
     return _characters.at(unicode);
   }
 
-  const auto& Characters() const
-  {
-    return _characters;
-  }
-
-  auto Kerning(uint32_t firstUnicode, uint32_t secondUnicode) const
+  float Kerning(uint32_t firstUnicode, uint32_t secondUnicode) const
   {
     auto it = _kernings.find(KerningKey(firstUnicode, secondUnicode));
     if (it == _kernings.end())
@@ -61,19 +56,19 @@ class Font
     return it->second;
   }
 
-  const auto& Kernings() const
-  {
-    return _kernings;
-  }
-
-  const auto& Atlas() const
+  const wgpu::Texture& Atlas() const
   {
     return _atlas;
   }
 
-  const auto& AtlasView() const
+  const wgpu::TextureView& AtlasView() const
   {
     return _atlasView;
+  }
+
+  const float LineHeight() const
+  {
+    return _lineHeight;
   }
 
  private:
@@ -87,5 +82,7 @@ class Font
   std::unordered_map<uint64_t, float> _kernings = {};
   wgpu::Texture _atlas;
   wgpu::TextureView _atlasView;
+
+  float _lineHeight = 0.0f;
 };
 }  // namespace graphics
