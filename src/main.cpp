@@ -11,6 +11,7 @@
 #include <optional>
 #include <vector>
 
+#include "graphics/camera.h"
 #include "graphics/renderer.h"
 #include "graphics/text.h"
 #include "platform/glfw_wgpu_surface.h"
@@ -157,18 +158,11 @@ int main()
 
   auto text = graphics::Text(device, queue, "Hello, World!", font);
 
-  auto projectionMat = glm::perspectiveFov(
-    glm::radians(45.0f),
-    (float)windowWidth,
-    (float)windowHeight,
-    0.1f,
-    1000.0f
+  auto camera = graphics::Camera();
+  camera.setPosition(
+    camera.position() +
+    glm::vec3(text.width() / 2.0f, -text.height() / 2.0f, 0.0f)
   );
-
-  auto viewMat = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, -5.0f)) *
-                 glm::mat4_cast(glm::quat(glm::vec3(0.0f, 0.0f, 0.0f)));
-
-  auto viewProjection = projectionMat * glm::inverse(viewMat);
 
   wgpu::BufferDescriptor uniformDescriptor{};
   uniformDescriptor.label = "Text Uniform Buffer";
@@ -177,7 +171,8 @@ int main()
     wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst;
   auto uniformBuffer = device.CreateBuffer(&uniformDescriptor);
 
-  queue.WriteBuffer(uniformBuffer, 0, &viewProjection, sizeof(glm::mat4));
+  queue
+    .WriteBuffer(uniformBuffer, 0, &camera.viewProjection(), sizeof(glm::mat4));
 
   std::vector<wgpu::BindGroupEntry> vertexGroupEntries(2);
   vertexGroupEntries[0].buffer = text.buffer();

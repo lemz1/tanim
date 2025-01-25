@@ -26,6 +26,7 @@ set(TANIM_SOURCES
   ${TANIM_DIR}/src/graphics/renderer.cpp
   ${TANIM_DIR}/src/graphics/font.cpp
   ${TANIM_DIR}/src/graphics/text.cpp
+  ${TANIM_DIR}/src/graphics/camera.cpp
 )
 
 if (APPLE)
@@ -37,6 +38,7 @@ set(TANIM_HEADERS
   ${TANIM_DIR}/src/graphics/renderer.h
   ${TANIM_DIR}/src/graphics/font.h
   ${TANIM_DIR}/src/graphics/text.h
+  ${TANIM_DIR}/src/graphics/camera.h
 )
 
 add_executable(tanim ${TANIM_SOURCES} ${TANIM_HEADERS})
