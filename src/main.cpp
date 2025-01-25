@@ -194,3 +194,25 @@ int main()
     surface.Present();
   }
 }
+
+#ifdef _WIN32
+#include <Windows.h>
+
+int WINAPI WinMain(
+  HINSTANCE hInstance,
+  HINSTANCE hPrevInstance,
+  LPSTR lpCmdLine,
+  int nCmdShow
+)
+{
+  if (AttachConsole(ATTACH_PARENT_PROCESS))
+  {
+    FILE* pStdout;
+    FILE* pStderr;
+    freopen_s(&pStdout, "CONOUT$", "w", stdout);
+    freopen_s(&pStderr, "CONOUT$", "w", stderr);
+  }
+  return main();
+}
+
+#endif

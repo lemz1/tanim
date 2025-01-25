@@ -41,7 +41,11 @@ set(TANIM_HEADERS
   ${TANIM_DIR}/src/graphics/camera.h
 )
 
-add_executable(tanim ${TANIM_SOURCES} ${TANIM_HEADERS})
+if (WIN32)
+  add_executable(tanim WIN32 ${TANIM_SOURCES} ${TANIM_HEADERS})
+else()
+  add_executable(tanim ${TANIM_SOURCES} ${TANIM_HEADERS})
+endif()
 
 target_include_directories(tanim PRIVATE ${TANIM_DIR}/src)
 
