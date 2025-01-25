@@ -49,6 +49,9 @@ class Text
     return _height;
   }
 
+ public:
+  glm::vec3 color{1.0f};
+
  private:
   void updateCharacters();
 

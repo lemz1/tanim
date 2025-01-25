@@ -12,12 +12,6 @@
 
 namespace graphics
 {
-struct Vertex
-{
-  glm::vec3 position;
-  glm::vec2 uv;
-};
-
 class Renderer
 {
  public:
@@ -62,9 +56,13 @@ class Renderer
   wgpu::Sampler _linearSampler;
   wgpu::Sampler _nearestSampler;
 
-  wgpu::Buffer _textBuffer;
+  wgpu::Buffer _textCharacterBuffer;
+  wgpu::Buffer _textReferenceBuffer;
   wgpu::Buffer _textUniformBuffer;
-  size_t _textBufferOffset = 0;
+  wgpu::Buffer _textNumBuffer;
+  size_t _textCharacterBufferOffset = 0;
+  size_t _textReferenceBufferOffset = 0;
+  uint32_t _textReferenceOffset = 0;
   wgpu::BindGroup _textBindGroup;
   wgpu::RenderPipeline _textPipeline;
 
