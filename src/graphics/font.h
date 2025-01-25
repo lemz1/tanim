@@ -41,14 +41,14 @@ class Font
     return _characters.at(unicode);
   }
 
-  const FontCharacter& Character(uint32_t unicode) const
+  const FontCharacter& character(uint32_t unicode) const
   {
     return _characters.at(unicode);
   }
 
-  float Kerning(uint32_t firstUnicode, uint32_t secondUnicode) const
+  float kerning(uint32_t firstUnicode, uint32_t secondUnicode) const
   {
-    auto it = _kernings.find(KerningKey(firstUnicode, secondUnicode));
+    auto it = _kernings.find(kerningKey(firstUnicode, secondUnicode));
     if (it == _kernings.end())
     {
       return 0.0f;
@@ -56,23 +56,23 @@ class Font
     return it->second;
   }
 
-  const wgpu::Texture& Atlas() const
+  const wgpu::Texture& atlas() const
   {
     return _atlas;
   }
 
-  const wgpu::TextureView& AtlasView() const
+  const wgpu::TextureView& atlasView() const
   {
     return _atlasView;
   }
 
-  const float LineHeight() const
+  const float lineHeight() const
   {
     return _lineHeight;
   }
 
  private:
-  uint64_t KerningKey(uint32_t firstUnicode, uint32_t secondUnicode) const
+  uint64_t kerningKey(uint32_t firstUnicode, uint32_t secondUnicode) const
   {
     return (uint64_t)firstUnicode << 32 | secondUnicode;
   }

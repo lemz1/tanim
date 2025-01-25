@@ -27,53 +27,53 @@ class Renderer
   );
   ~Renderer() = default;
 
-  void DrawQuad(float x, float y);
+  void drawQuad(float x, float y);
 
-  void DrawText(
+  void drawText(
     const graphics::Text& text,
     const wgpu::TextureView& view,
     const wgpu::BindGroup& vertexGroup,
     const wgpu::BindGroup& fragmentGroup
   );
 
-  void Flush(
+  void flush(
     const wgpu::TextureView& view,
     const wgpu::RenderPipeline& pipeline,
     const wgpu::BindGroup& bindGroup
   );
 
-  const wgpu::Sampler& LinearSampler() const
+  const wgpu::Sampler& linearSampler() const
   {
     return _linearSampler;
   }
 
-  const wgpu::Sampler& NearestSampler() const
+  const wgpu::Sampler& nearestSampler() const
   {
     return _nearestSampler;
   }
 
-  const wgpu::BindGroupLayout& TextVertexBindGroupLayout() const
+  const wgpu::BindGroupLayout& textVertexBindGroupLayout() const
   {
     return _textBindGroupLayouts[0];
   }
 
-  const wgpu::BindGroupLayout& TextFragmentBindGroupLayout() const
+  const wgpu::BindGroupLayout& textFragmentBindGroupLayout() const
   {
     return _textBindGroupLayouts[1];
   }
 
-  const wgpu::RenderPipeline& TextPipeline() const
+  const wgpu::RenderPipeline& textPipeline() const
   {
     return _textPipeline;
   }
-  const graphics::Font& Font(const std::filesystem::path& path);
+  const Font& font(const std::filesystem::path& path);
 
  private:
-  void CreateSamplers();
+  void createSamplers();
 
-  void CreateTextPipeline(wgpu::TextureFormat format);
+  void createTextPipeline(wgpu::TextureFormat format);
 
-  void CreateDrawBuffers();
+  void createDrawBuffers();
 
  private:
   wgpu::Sampler _linearSampler;

@@ -14,12 +14,12 @@ Renderer::Renderer(
 )
   : _device(device), _queue(queue)
 {
-  CreateSamplers();
-  CreateTextPipeline(format);
-  CreateDrawBuffers();
+  createSamplers();
+  createTextPipeline(format);
+  createDrawBuffers();
 }
 
-void Renderer::DrawQuad(float x, float y)
+void Renderer::drawQuad(float x, float y)
 {
   std::vector<Vertex> vertices = {
     {
@@ -67,7 +67,7 @@ void Renderer::DrawQuad(float x, float y)
   _indexValueOffset += 4;
 }
 
-void Renderer::DrawText(
+void Renderer::drawText(
   const graphics::Text& text,
   const wgpu::TextureView& view,
   const wgpu::BindGroup& vertexGroup,
@@ -94,7 +94,7 @@ void Renderer::DrawText(
   renderPass.SetPipeline(_textPipeline);
   renderPass.SetBindGroup(0, vertexGroup);
   renderPass.SetBindGroup(1, fragmentGroup);
-  renderPass.Draw(4, (uint32_t)text.CharacterCount(), 0, 0);
+  renderPass.Draw(4, (uint32_t)text.characterCount(), 0, 0);
   renderPass.End();
 
   wgpu::CommandBufferDescriptor commandDescriptor{};
@@ -104,7 +104,7 @@ void Renderer::DrawText(
   _queue.Submit(1, &command);
 }
 
-void Renderer::Flush(
+void Renderer::flush(
   const wgpu::TextureView& view,
   const wgpu::RenderPipeline& pipeline,
   const wgpu::BindGroup& bindGroup
@@ -151,7 +151,7 @@ void Renderer::Flush(
   _indexValueOffset = 0;
 }
 
-const graphics::Font& Renderer::Font(const std::filesystem::path& path)
+const graphics::Font& Renderer::font(const std::filesystem::path& path)
 {
   if (_fonts.find(path) != _fonts.end())
   {
@@ -162,7 +162,7 @@ const graphics::Font& Renderer::Font(const std::filesystem::path& path)
   return _fonts.at(path);
 }
 
-void Renderer::CreateSamplers()
+void Renderer::createSamplers()
 {
   wgpu::SamplerDescriptor linearDescriptor{};
   linearDescriptor.label = "Renderer Linear Sampler";
@@ -183,7 +183,7 @@ void Renderer::CreateSamplers()
   _nearestSampler = _device.CreateSampler(&nearestDescriptor);
 }
 
-void Renderer::CreateTextPipeline(wgpu::TextureFormat format)
+void Renderer::createTextPipeline(wgpu::TextureFormat format)
 {
   std::array<wgpu::BindGroupLayoutEntry, 2> vertexLayoutEntries{};
   vertexLayoutEntries[0].binding = 0;
@@ -339,7 +339,7 @@ void Renderer::CreateTextPipeline(wgpu::TextureFormat format)
   _textPipeline = _device.CreateRenderPipeline(&pipelineDescriptor);
 }
 
-void Renderer::CreateDrawBuffers()
+void Renderer::createDrawBuffers()
 {
   wgpu::BufferDescriptor vertexBufferDescriptor{};
   vertexBufferDescriptor.label = "Renderer Vertex Buffer";

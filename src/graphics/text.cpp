@@ -12,8 +12,8 @@ Text::Text(
 )
   : _device(device), _queue(queue), _text(text), _font(font)
 {
-  CreateBuffer();
-  FillBuffer();
+  createBuffer();
+  fillBuffer();
 }
 void Text::SetText(std::string_view text)
 {
@@ -24,11 +24,11 @@ void Text::SetText(std::string_view text)
 
   if (text.length() > _text.length())
   {
-    CreateBuffer();
+    createBuffer();
   }
 
   _text = text;
-  FillBuffer();
+  fillBuffer();
 }
 
 void Text::SetFont(const Font& font)
@@ -39,10 +39,10 @@ void Text::SetFont(const Font& font)
   }
 
   _font = font;
-  FillBuffer();
+  fillBuffer();
 }
 
-void Text::CreateBuffer()
+void Text::createBuffer()
 {
   wgpu::BufferDescriptor bufferDescriptor{};
   bufferDescriptor.label = "Text Character Buffer";
@@ -52,7 +52,7 @@ void Text::CreateBuffer()
   _characterBuffer = _device.CreateBuffer(&bufferDescriptor);
 }
 
-void Text::FillBuffer()
+void Text::fillBuffer()
 {
   std::vector<TextCharacter> textChars;
   textChars.reserve(_text.length());
@@ -65,17 +65,17 @@ void Text::FillBuffer()
   {
     if (_text.at(i) == ' ')
     {
-      cursor.x += _font.get().Character(' ').advance;
+      cursor.x += _font.get().character(' ').advance;
       continue;
     }
     else if (_text.at(i) == '\n')
     {
       cursor.x = 0;
-      cursor.y -= _font.get().LineHeight();
+      cursor.y -= _font.get().lineHeight();
       continue;
     }
 
-    auto& fontChar = _font.get().Character(_text.at(i));
+    auto& fontChar = _font.get().character(_text.at(i));
 
     TextCharacter textChar{};
     textChar.bounds = fontChar.bounds;
@@ -85,7 +85,7 @@ void Text::FillBuffer()
 
     if (i > 0)
     {
-      textChar.position.x += _font.get().Kerning(_text.at(i - 1), _text.at(i));
+      textChar.position.x += _font.get().kerning(_text.at(i - 1), _text.at(i));
     }
 
     textChar.size *= scalingFactor;

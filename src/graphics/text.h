@@ -29,39 +29,39 @@ class Text
 
   void SetFont(const Font& font);
 
-  const std::string& _Text() const
+  const std::string& text() const
   {
     return _text;
   }
 
-  const Font& _Font() const
+  const Font& font() const
   {
     return _font;
   }
 
-  const wgpu::Buffer& Buffer() const
+  const wgpu::Buffer& buffer() const
   {
     return _characterBuffer;
   }
 
-  size_t CharacterCount() const
+  size_t characterCount() const
   {
     return _characterCount;
   }
 
-  float Width() const
+  float width() const
   {
     return _width;
   }
 
-  float Height() const
+  float height() const
   {
     return _height;
   }
 
  private:
-  void CreateBuffer();
-  void FillBuffer();
+  void createBuffer();
+  void fillBuffer();
 
  private:
   const wgpu::Device& _device;

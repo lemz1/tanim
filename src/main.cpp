@@ -153,7 +153,7 @@ int main()
 
   auto renderer = graphics::Renderer(device, queue, surfaceFormat);
 
-  auto& font = renderer.Font("assets/fonts/ARIALBD.TTF-msdf");
+  auto& font = renderer.font("assets/fonts/ARIALBD.TTF-msdf");
 
   auto text = graphics::Text(device, queue, "Hello, World!", font);
 
@@ -180,7 +180,7 @@ int main()
   queue.WriteBuffer(uniformBuffer, 0, &viewProjection, sizeof(glm::mat4));
 
   std::vector<wgpu::BindGroupEntry> vertexGroupEntries(2);
-  vertexGroupEntries[0].buffer = text.Buffer();
+  vertexGroupEntries[0].buffer = text.buffer();
   vertexGroupEntries[0].binding = 0;
 
   vertexGroupEntries[1].buffer = uniformBuffer;
@@ -190,20 +190,20 @@ int main()
   vertexGroupDescriptor.label = "Vertex Bind Group";
   vertexGroupDescriptor.entryCount = vertexGroupEntries.size();
   vertexGroupDescriptor.entries = vertexGroupEntries.data();
-  vertexGroupDescriptor.layout = renderer.TextVertexBindGroupLayout();
+  vertexGroupDescriptor.layout = renderer.textVertexBindGroupLayout();
   auto vertexGroup = device.CreateBindGroup(&vertexGroupDescriptor);
 
   std::vector<wgpu::BindGroupEntry> fragmentGroupEntries(2);
-  fragmentGroupEntries[0].textureView = font.AtlasView();
+  fragmentGroupEntries[0].textureView = font.atlasView();
   fragmentGroupEntries[0].binding = 0;
-  fragmentGroupEntries[1].sampler = renderer.LinearSampler();
+  fragmentGroupEntries[1].sampler = renderer.linearSampler();
   fragmentGroupEntries[1].binding = 1;
 
   wgpu::BindGroupDescriptor fragmentGroupDescriptor{};
   fragmentGroupDescriptor.label = "Fragment Bind Group";
   fragmentGroupDescriptor.entryCount = fragmentGroupEntries.size();
   fragmentGroupDescriptor.entries = fragmentGroupEntries.data();
-  fragmentGroupDescriptor.layout = renderer.TextFragmentBindGroupLayout();
+  fragmentGroupDescriptor.layout = renderer.textFragmentBindGroupLayout();
   auto fragmentGroup = device.CreateBindGroup(&fragmentGroupDescriptor);
 
   float time = 0.0;
@@ -230,7 +230,7 @@ int main()
     auto surfaceView =
       surfaceTexture.texture.CreateView(&textureViewDescriptor);
 
-    renderer.DrawText(text, surfaceView, vertexGroup, fragmentGroup);
+    renderer.drawText(text, surfaceView, vertexGroup, fragmentGroup);
 
     surface.Present();
   }
