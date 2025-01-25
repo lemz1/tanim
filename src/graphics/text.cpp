@@ -2,6 +2,8 @@
 
 namespace graphics
 {
+static constexpr float scalingFactor = 0.01f;
+
 Text::Text(
   const wgpu::Device& device,
   const wgpu::Queue& queue,
@@ -56,6 +58,8 @@ void Text::FillBuffer()
   textChars.reserve(_text.length());
 
   _characterCount = 0;
+  _width = 0.0f;
+  _height = 0.0f;
   glm::vec2 cursor{0, 0};
   for (size_t i = 0; i < _text.length(); i++)
   {
@@ -83,6 +87,12 @@ void Text::FillBuffer()
     {
       textChar.position.x += _font.get().Kerning(_text.at(i - 1), _text.at(i));
     }
+
+    textChar.size *= scalingFactor;
+    textChar.position *= scalingFactor;
+
+    _width = std::max(_width, textChar.position.x + textChar.size.x);
+    _height = std::max(_height, -textChar.position.y + textChar.size.y);
 
     textChars.emplace_back(textChar);
 

@@ -227,8 +227,6 @@ void Renderer::CreateTextPipeline(wgpu::TextureFormat format)
       vec2f(1.0, -1.0)
     );
 
-    const scalingFactor: f32 = 0.01;
-
     struct VertexInput {
       @builtin(vertex_index) vertexIndex: u32,
       @builtin(instance_index) instanceIndex: u32,
@@ -254,7 +252,6 @@ void Renderer::CreateTextPipeline(wgpu::TextureFormat format)
       var vertexPosition = positions[in.vertexIndex];
       vertexPosition *= character.size;
       vertexPosition += character.position;
-      vertexPosition *= scalingFactor;
 
       var uvs = array<vec2f, 4>(
         character.bounds.xz,

@@ -49,6 +49,16 @@ class Text
     return _characterCount;
   }
 
+  float Width() const
+  {
+    return _width;
+  }
+
+  float Height() const
+  {
+    return _height;
+  }
+
  private:
   void CreateBuffer();
   void FillBuffer();
@@ -62,5 +72,7 @@ class Text
   wgpu::Buffer _characterBuffer;
 
   size_t _characterCount;
+  float _width;
+  float _height;
 };
 }  // namespace graphics
