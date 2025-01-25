@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <glm/glm.hpp>
 
+#include "camera.h"
 #include "font.h"
 #include "text.h"
 
@@ -29,18 +30,9 @@ class Renderer
 
   void drawQuad(float x, float y);
 
-  void drawText(
-    const graphics::Text& text,
-    const wgpu::TextureView& view,
-    const wgpu::BindGroup& vertexGroup,
-    const wgpu::BindGroup& fragmentGroup
-  );
+  void drawText(const Text& text, const Camera& camera);
 
-  void flush(
-    const wgpu::TextureView& view,
-    const wgpu::RenderPipeline& pipeline,
-    const wgpu::BindGroup& bindGroup
-  );
+  void flush(const wgpu::TextureView& view);
 
   const wgpu::Sampler& linearSampler() const
   {
@@ -52,16 +44,6 @@ class Renderer
     return _nearestSampler;
   }
 
-  const wgpu::BindGroupLayout& textVertexBindGroupLayout() const
-  {
-    return _textBindGroupLayouts[0];
-  }
-
-  const wgpu::BindGroupLayout& textFragmentBindGroupLayout() const
-  {
-    return _textBindGroupLayouts[1];
-  }
-
   const wgpu::RenderPipeline& textPipeline() const
   {
     return _textPipeline;
@@ -71,6 +53,7 @@ class Renderer
  private:
   void createSamplers();
 
+  void createTextBuffers();
   void createTextPipeline(wgpu::TextureFormat format);
 
   void createDrawBuffers();
@@ -79,10 +62,13 @@ class Renderer
   wgpu::Sampler _linearSampler;
   wgpu::Sampler _nearestSampler;
 
-  std::array<wgpu::VertexAttribute, 2> _vertexAttributes;
-  std::array<wgpu::BindGroupLayout, 2> _textBindGroupLayouts;
+  wgpu::Buffer _textBuffer;
+  wgpu::Buffer _textUniformBuffer;
+  size_t _textBufferOffset = 0;
+  wgpu::BindGroup _textBindGroup;
   wgpu::RenderPipeline _textPipeline;
 
+  std::array<wgpu::VertexAttribute, 2> _vertexAttributes;
   wgpu::Buffer _vertexBuffer;
   wgpu::Buffer _indexBuffer;
 

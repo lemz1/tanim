@@ -6,6 +6,7 @@ namespace graphics
 {
 constexpr size_t vertexBufferSize = 1000 * sizeof(Vertex);
 constexpr size_t indexBufferSize = vertexBufferSize * 2;
+constexpr size_t textBufferSize = 2048 * sizeof(TextCharacter);
 
 Renderer::Renderer(
   const wgpu::Device& device,
@@ -15,6 +16,7 @@ Renderer::Renderer(
   : _device(device), _queue(queue)
 {
   createSamplers();
+  createTextBuffers();
   createTextPipeline(format);
   createDrawBuffers();
 }
@@ -67,12 +69,26 @@ void Renderer::drawQuad(float x, float y)
   _indexValueOffset += 4;
 }
 
-void Renderer::drawText(
-  const graphics::Text& text,
-  const wgpu::TextureView& view,
-  const wgpu::BindGroup& vertexGroup,
-  const wgpu::BindGroup& fragmentGroup
-)
+void Renderer::drawText(const Text& text, const Camera& camera)
+{
+  _queue.WriteBuffer(
+    _textUniformBuffer,
+    0,
+    &camera.viewProjection(),
+    sizeof(glm::mat4)
+  );
+
+  _queue.WriteBuffer(
+    _textBuffer,
+    _textBufferOffset,
+    text.characters().data(),
+    text.characters().size() * sizeof(TextCharacter)
+  );
+
+  _textBufferOffset += text.characters().size() * sizeof(TextCharacter);
+}
+
+void Renderer::flush(const wgpu::TextureView& view)
 {
   wgpu::CommandEncoderDescriptor encoderDescriptor{};
   encoderDescriptor.label = "Renderer Command Encoder";
@@ -92,52 +108,9 @@ void Renderer::drawText(
 
   auto renderPass = encoder.BeginRenderPass(&renderPassDescriptor);
   renderPass.SetPipeline(_textPipeline);
-  renderPass.SetBindGroup(0, vertexGroup);
-  renderPass.SetBindGroup(1, fragmentGroup);
-  renderPass.Draw(4, (uint32_t)text.characterCount(), 0, 0);
-  renderPass.End();
-
-  wgpu::CommandBufferDescriptor commandDescriptor{};
-  commandDescriptor.label = "Renderer Command Buffer";
-  auto command = encoder.Finish(&commandDescriptor);
-
-  _queue.Submit(1, &command);
-}
-
-void Renderer::flush(
-  const wgpu::TextureView& view,
-  const wgpu::RenderPipeline& pipeline,
-  const wgpu::BindGroup& bindGroup
-)
-{
-  wgpu::CommandEncoderDescriptor encoderDescriptor{};
-  encoderDescriptor.label = "Renderer Command Encoder";
-  auto encoder = _device.CreateCommandEncoder(&encoderDescriptor);
-
-  wgpu::RenderPassColorAttachment colorAttachment{};
-  colorAttachment.view = view;
-  colorAttachment.loadOp = wgpu::LoadOp::Clear;
-  colorAttachment.storeOp = wgpu::StoreOp::Store;
-  colorAttachment.clearValue = {0.1, 0.1, 0.1, 1.0};
-  colorAttachment.depthSlice = wgpu::kDepthSliceUndefined;
-
-  wgpu::RenderPassDescriptor renderPassDescriptor{};
-  renderPassDescriptor.label = "Renderer Render Pass";
-  renderPassDescriptor.colorAttachmentCount = 1;
-  renderPassDescriptor.colorAttachments = &colorAttachment;
-
-  auto renderPass = encoder.BeginRenderPass(&renderPassDescriptor);
-  renderPass.SetPipeline(pipeline);
-  renderPass.SetVertexBuffer(0, _vertexBuffer, 0, _vertexBufferOffset);
-  renderPass.SetIndexBuffer(
-    _indexBuffer,
-    wgpu::IndexFormat::Uint32,
-    0,
-    _indexBufferOffset
-  );
-  renderPass.SetBindGroup(0, bindGroup);
+  renderPass.SetBindGroup(0, _textBindGroup);
   renderPass
-    .DrawIndexed((uint32_t)(_indexBufferOffset / sizeof(uint32_t)), 1, 0, 0, 0);
+    .Draw(4, (uint32_t)(_textBufferOffset / sizeof(TextCharacter)), 0, 0);
   renderPass.End();
 
   wgpu::CommandBufferDescriptor commandDescriptor{};
@@ -146,6 +119,7 @@ void Renderer::flush(
 
   _queue.Submit(1, &command);
 
+  _textBufferOffset = 0;
   _vertexBufferOffset = 0;
   _indexBufferOffset = 0;
   _indexValueOffset = 0;
@@ -183,41 +157,75 @@ void Renderer::createSamplers()
   _nearestSampler = _device.CreateSampler(&nearestDescriptor);
 }
 
+void Renderer::createTextBuffers()
+{
+  wgpu::BufferDescriptor textBufferDescriptor{};
+  textBufferDescriptor.label = "Renderer Text Buffer";
+  textBufferDescriptor.size = textBufferSize;
+  textBufferDescriptor.usage =
+    wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst;
+  _textBuffer = _device.CreateBuffer(&textBufferDescriptor);
+
+  wgpu::BufferDescriptor textUniformBufferDescriptor{};
+  textUniformBufferDescriptor.label = "Renderer Text Uniform Buffer";
+  textUniformBufferDescriptor.size = textBufferSize;
+  textUniformBufferDescriptor.usage =
+    wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst;
+  _textUniformBuffer = _device.CreateBuffer(&textUniformBufferDescriptor);
+}
+
 void Renderer::createTextPipeline(wgpu::TextureFormat format)
 {
-  std::array<wgpu::BindGroupLayoutEntry, 2> vertexLayoutEntries{};
-  vertexLayoutEntries[0].binding = 0;
-  vertexLayoutEntries[0].visibility = wgpu::ShaderStage::Vertex;
-  vertexLayoutEntries[0].buffer.type = wgpu::BufferBindingType::ReadOnlyStorage;
+  std::array<wgpu::BindGroupLayoutEntry, 4> bindGroupLayoutEntries{};
+  bindGroupLayoutEntries[0].binding = 0;
+  bindGroupLayoutEntries[0].visibility = wgpu::ShaderStage::Vertex;
+  bindGroupLayoutEntries[0].buffer.type =
+    wgpu::BufferBindingType::ReadOnlyStorage;
 
-  vertexLayoutEntries[1].binding = 1;
-  vertexLayoutEntries[1].visibility = wgpu::ShaderStage::Vertex;
-  vertexLayoutEntries[1].buffer.type = wgpu::BufferBindingType::Uniform;
+  bindGroupLayoutEntries[1].binding = 1;
+  bindGroupLayoutEntries[1].visibility = wgpu::ShaderStage::Vertex;
+  bindGroupLayoutEntries[1].buffer.type = wgpu::BufferBindingType::Uniform;
 
-  wgpu::BindGroupLayoutDescriptor vertexLayoutDescriptor{};
-  vertexLayoutDescriptor.label = "Renderer Text Vertex Bind Group Layout";
-  vertexLayoutDescriptor.entryCount = (uint32_t)vertexLayoutEntries.size();
-  vertexLayoutDescriptor.entries = vertexLayoutEntries.data();
-  _textBindGroupLayouts[0] =
-    _device.CreateBindGroupLayout(&vertexLayoutDescriptor);
-
-  std::array<wgpu::BindGroupLayoutEntry, 2> fragmentLayoutEntries{};
-  fragmentLayoutEntries[0].binding = 0;
-  fragmentLayoutEntries[0].visibility = wgpu::ShaderStage::Fragment;
-  fragmentLayoutEntries[0].texture.sampleType = wgpu::TextureSampleType::Float;
-  fragmentLayoutEntries[0].texture.viewDimension =
+  bindGroupLayoutEntries[2].binding = 2;
+  bindGroupLayoutEntries[2].visibility = wgpu::ShaderStage::Fragment;
+  bindGroupLayoutEntries[2].texture.sampleType = wgpu::TextureSampleType::Float;
+  bindGroupLayoutEntries[2].texture.viewDimension =
     wgpu::TextureViewDimension::e2D;
 
-  fragmentLayoutEntries[1].binding = 1;
-  fragmentLayoutEntries[1].visibility = wgpu::ShaderStage::Fragment;
-  fragmentLayoutEntries[1].sampler.type = wgpu::SamplerBindingType::Filtering;
+  bindGroupLayoutEntries[3].binding = 3;
+  bindGroupLayoutEntries[3].visibility = wgpu::ShaderStage::Fragment;
+  bindGroupLayoutEntries[3].sampler.type = wgpu::SamplerBindingType::Filtering;
 
-  wgpu::BindGroupLayoutDescriptor fragmentLayoutDescriptor{};
-  fragmentLayoutDescriptor.label = "Renderer Text Fragment Bind Group Layout";
-  fragmentLayoutDescriptor.entryCount = (uint32_t)fragmentLayoutEntries.size();
-  fragmentLayoutDescriptor.entries = fragmentLayoutEntries.data();
-  _textBindGroupLayouts[1] =
-    _device.CreateBindGroupLayout(&fragmentLayoutDescriptor);
+  wgpu::BindGroupLayoutDescriptor bindGroupLayoutDescriptor{};
+  bindGroupLayoutDescriptor.label = "Renderer Text Bind Group Layout";
+  bindGroupLayoutDescriptor.entryCount =
+    (uint32_t)bindGroupLayoutEntries.size();
+  bindGroupLayoutDescriptor.entries = bindGroupLayoutEntries.data();
+  auto bindGroupLayout =
+    _device.CreateBindGroupLayout(&bindGroupLayoutDescriptor);
+
+  std::array<wgpu::BindGroupEntry, 4> bindGroupEntries{};
+  bindGroupEntries[0].buffer = _textBuffer;
+  bindGroupEntries[0].binding = 0;
+
+  bindGroupEntries[1].buffer = _textUniformBuffer;
+  bindGroupEntries[1].binding = 1;
+
+  // temporary
+  auto& font = this->font("assets/fonts/ARIALBD.TTF-msdf");
+
+  bindGroupEntries[2].textureView = font.atlasView();
+  bindGroupEntries[2].binding = 2;
+
+  bindGroupEntries[3].sampler = _linearSampler;
+  bindGroupEntries[3].binding = 3;
+
+  wgpu::BindGroupDescriptor bindGroupDescriptor{};
+  bindGroupDescriptor.label = "Renderer Text Bind Group";
+  bindGroupDescriptor.entryCount = bindGroupEntries.size();
+  bindGroupDescriptor.entries = bindGroupEntries.data();
+  bindGroupDescriptor.layout = bindGroupLayout;
+  _textBindGroup = _device.CreateBindGroup(&bindGroupDescriptor);
 
   const char* shaderCode = R"(
     const positions = array<vec2f, 4>(
@@ -268,8 +276,8 @@ void Renderer::createTextPipeline(wgpu::TextureFormat format)
       return out;
     }
 
-    @group(1) @binding(0) var fontTexture: texture_2d<f32>;
-    @group(1) @binding(1) var fontSampler: sampler;
+    @group(0) @binding(2) var fontTexture: texture_2d<f32>;
+    @group(0) @binding(3) var fontSampler: sampler;
 
     fn sampleMsdf(uv: vec2f) -> f32 {
       let c = textureSample(fontTexture, fontSampler, uv);
@@ -324,9 +332,8 @@ void Renderer::createTextPipeline(wgpu::TextureFormat format)
 
   wgpu::PipelineLayoutDescriptor pipelineLayoutDescriptor{};
   pipelineLayoutDescriptor.label = "Renderer Text Pipeline Layout";
-  pipelineLayoutDescriptor.bindGroupLayoutCount =
-    (uint32_t)_textBindGroupLayouts.size();
-  pipelineLayoutDescriptor.bindGroupLayouts = _textBindGroupLayouts.data();
+  pipelineLayoutDescriptor.bindGroupLayoutCount = 1;
+  pipelineLayoutDescriptor.bindGroupLayouts = &bindGroupLayout;
   auto pipelineLayout = _device.CreatePipelineLayout(&pipelineLayoutDescriptor);
 
   wgpu::RenderPipelineDescriptor pipelineDescriptor{};

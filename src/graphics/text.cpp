@@ -2,18 +2,11 @@
 
 namespace graphics
 {
-static constexpr float scalingFactor = 0.01f;
+constexpr float scalingFactor = 0.01f;
 
-Text::Text(
-  const wgpu::Device& device,
-  const wgpu::Queue& queue,
-  std::string_view text,
-  const Font& font
-)
-  : _device(device), _queue(queue), _text(text), _font(font)
+Text::Text(std::string_view text, const Font& font) : _text(text), _font(font)
 {
-  createBuffer();
-  fillBuffer();
+  updateCharacters();
 }
 void Text::SetText(std::string_view text)
 {
@@ -22,13 +15,8 @@ void Text::SetText(std::string_view text)
     return;
   }
 
-  if (text.length() > _text.length())
-  {
-    createBuffer();
-  }
-
   _text = text;
-  fillBuffer();
+  updateCharacters();
 }
 
 void Text::SetFont(const Font& font)
@@ -39,25 +27,14 @@ void Text::SetFont(const Font& font)
   }
 
   _font = font;
-  fillBuffer();
+  updateCharacters();
 }
 
-void Text::createBuffer()
+void Text::updateCharacters()
 {
-  wgpu::BufferDescriptor bufferDescriptor{};
-  bufferDescriptor.label = "Text Character Buffer";
-  bufferDescriptor.size = _text.length() * sizeof(TextCharacter);
-  bufferDescriptor.usage =
-    wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst;
-  _characterBuffer = _device.CreateBuffer(&bufferDescriptor);
-}
+  _characters.clear();
+  _characters.reserve(_text.length());
 
-void Text::fillBuffer()
-{
-  std::vector<TextCharacter> textChars;
-  textChars.reserve(_text.length());
-
-  _characterCount = 0;
   _width = 0.0f;
   _height = 0.0f;
   glm::vec2 cursor{0, 0};
@@ -94,17 +71,9 @@ void Text::fillBuffer()
     _width = std::max(_width, textChar.position.x + textChar.size.x);
     _height = std::max(_height, -textChar.position.y + textChar.size.y);
 
-    textChars.emplace_back(textChar);
+    _characters.emplace_back(textChar);
 
     cursor.x += fontChar.advance;
-    _characterCount++;
   }
-
-  _queue.WriteBuffer(
-    _characterBuffer,
-    0,
-    textChars.data(),
-    _characterCount * sizeof(TextCharacter)
-  );
 }
 }  // namespace graphics

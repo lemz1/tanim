@@ -156,50 +156,13 @@ int main()
 
   auto& font = renderer.font("assets/fonts/ARIALBD.TTF-msdf");
 
-  auto text = graphics::Text(device, queue, "Hello, World!", font);
+  auto text = graphics::Text("Hello, World!", font);
 
   auto camera = graphics::Camera();
   camera.setPosition(
     camera.position() +
     glm::vec3(text.width() / 2.0f, -text.height() / 2.0f, 0.0f)
   );
-
-  wgpu::BufferDescriptor uniformDescriptor{};
-  uniformDescriptor.label = "Text Uniform Buffer";
-  uniformDescriptor.size = sizeof(glm::mat4);
-  uniformDescriptor.usage =
-    wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst;
-  auto uniformBuffer = device.CreateBuffer(&uniformDescriptor);
-
-  queue
-    .WriteBuffer(uniformBuffer, 0, &camera.viewProjection(), sizeof(glm::mat4));
-
-  std::vector<wgpu::BindGroupEntry> vertexGroupEntries(2);
-  vertexGroupEntries[0].buffer = text.buffer();
-  vertexGroupEntries[0].binding = 0;
-
-  vertexGroupEntries[1].buffer = uniformBuffer;
-  vertexGroupEntries[1].binding = 1;
-
-  wgpu::BindGroupDescriptor vertexGroupDescriptor{};
-  vertexGroupDescriptor.label = "Vertex Bind Group";
-  vertexGroupDescriptor.entryCount = vertexGroupEntries.size();
-  vertexGroupDescriptor.entries = vertexGroupEntries.data();
-  vertexGroupDescriptor.layout = renderer.textVertexBindGroupLayout();
-  auto vertexGroup = device.CreateBindGroup(&vertexGroupDescriptor);
-
-  std::vector<wgpu::BindGroupEntry> fragmentGroupEntries(2);
-  fragmentGroupEntries[0].textureView = font.atlasView();
-  fragmentGroupEntries[0].binding = 0;
-  fragmentGroupEntries[1].sampler = renderer.linearSampler();
-  fragmentGroupEntries[1].binding = 1;
-
-  wgpu::BindGroupDescriptor fragmentGroupDescriptor{};
-  fragmentGroupDescriptor.label = "Fragment Bind Group";
-  fragmentGroupDescriptor.entryCount = fragmentGroupEntries.size();
-  fragmentGroupDescriptor.entries = fragmentGroupEntries.data();
-  fragmentGroupDescriptor.layout = renderer.textFragmentBindGroupLayout();
-  auto fragmentGroup = device.CreateBindGroup(&fragmentGroupDescriptor);
 
   float time = 0.0;
 
@@ -225,7 +188,8 @@ int main()
     auto surfaceView =
       surfaceTexture.texture.CreateView(&textureViewDescriptor);
 
-    renderer.drawText(text, surfaceView, vertexGroup, fragmentGroup);
+    renderer.drawText(text, camera);
+    renderer.flush(surfaceView);
 
     surface.Present();
   }
