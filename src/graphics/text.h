@@ -9,9 +9,10 @@ namespace graphics
 {
 struct TextCharacter
 {
-  FontUVBounds bounds;
-  glm::vec2 size;
-  glm::vec2 position;
+  alignas(16) FontUVBounds bounds;
+  alignas(16) glm::vec3 color;
+  alignas(8) glm::vec2 size;
+  alignas(8) glm::vec2 position;
 };
 
 class Text
@@ -20,19 +21,23 @@ class Text
   Text(std::string_view text, const Font& font);
   ~Text() = default;
 
-  void SetText(std::string_view text);
-
-  void SetFont(const Font& font);
+  const glm::vec3& color() const
+  {
+    return _color;
+  }
+  void setColor(const glm::vec3& color);
 
   const std::string& text() const
   {
     return _text;
   }
+  void setText(std::string_view text);
 
   const Font& font() const
   {
     return _font;
   }
+  void setFont(const Font& font);
 
   const std::vector<TextCharacter>& characters() const
   {
@@ -49,13 +54,12 @@ class Text
     return _height;
   }
 
- public:
-  glm::vec3 color{1.0f};
-
  private:
   void updateCharacters();
 
  private:
+  glm::vec3 _color{1.0f};
+
   std::string _text;
   std::reference_wrapper<const Font> _font;
 

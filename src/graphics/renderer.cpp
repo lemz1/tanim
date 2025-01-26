@@ -4,13 +4,6 @@
 
 namespace graphics
 {
-struct TextReference
-{
-  glm::vec3 color;
-  alignas(16) uint32_t first;
-  uint32_t last;
-};
-
 struct Vertex
 {
   glm::vec3 position;
@@ -20,7 +13,6 @@ struct Vertex
 constexpr size_t vertexBufferSize = 1000 * sizeof(Vertex);
 constexpr size_t indexBufferSize = vertexBufferSize * 2;
 constexpr size_t textCharacterBufferSize = 2048 * sizeof(TextCharacter);
-constexpr size_t textReferenceBufferSize = 128 * sizeof(TextReference);
 
 Renderer::Renderer(
   const wgpu::Device& device,
@@ -92,20 +84,6 @@ void Renderer::drawText(const Text& text, const Camera& camera)
     sizeof(glm::mat4)
   );
 
-  TextReference reference = {
-    text.color,
-    _textReferenceOffset,
-    _textReferenceOffset + (uint32_t)text.characters().size() - 1,
-  };
-  _queue.WriteBuffer(
-    _textReferenceBuffer,
-    _textReferenceBufferOffset,
-    &reference,
-    sizeof(TextReference)
-  );
-  _textReferenceOffset += (uint32_t)text.characters().size();
-  _textReferenceBufferOffset += sizeof(TextReference);
-
   _queue.WriteBuffer(
     _textCharacterBuffer,
     _textCharacterBufferOffset,
@@ -119,10 +97,6 @@ void Renderer::drawText(const Text& text, const Camera& camera)
 
 void Renderer::flush(const wgpu::TextureView& view)
 {
-  uint32_t value =
-    (uint32_t)(_textReferenceBufferOffset / sizeof(TextReference));
-  _queue.WriteBuffer(_textNumBuffer, 0, &value, sizeof(uint32_t));
-
   wgpu::CommandEncoderDescriptor encoderDescriptor{};
   encoderDescriptor.label = "Renderer Command Encoder";
   auto encoder = _device.CreateCommandEncoder(&encoderDescriptor);
@@ -157,8 +131,6 @@ void Renderer::flush(const wgpu::TextureView& view)
   _queue.Submit(1, &command);
 
   _textCharacterBufferOffset = 0;
-  _textReferenceBufferOffset = 0;
-  _textReferenceOffset = 0;
   _vertexBufferOffset = 0;
   _indexBufferOffset = 0;
   _indexValueOffset = 0;
@@ -205,31 +177,17 @@ void Renderer::createTextBuffers()
     wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst;
   _textCharacterBuffer = _device.CreateBuffer(&textCharacterBufferDescriptor);
 
-  wgpu::BufferDescriptor textReferenceBufferDescriptor{};
-  textReferenceBufferDescriptor.label = "Renderer Text Reference Buffer";
-  textReferenceBufferDescriptor.size = textCharacterBufferSize;
-  textReferenceBufferDescriptor.usage =
-    wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst;
-  _textReferenceBuffer = _device.CreateBuffer(&textReferenceBufferDescriptor);
-
   wgpu::BufferDescriptor textUniformBufferDescriptor{};
   textUniformBufferDescriptor.label = "Renderer Text Uniform Buffer";
-  textUniformBufferDescriptor.size = textCharacterBufferSize;
+  textUniformBufferDescriptor.size = sizeof(glm::mat4);
   textUniformBufferDescriptor.usage =
     wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst;
   _textUniformBuffer = _device.CreateBuffer(&textUniformBufferDescriptor);
-
-  wgpu::BufferDescriptor textNumBufferDescriptor{};
-  textNumBufferDescriptor.label = "Renderer Text Num Buffer";
-  textNumBufferDescriptor.size = sizeof(uint32_t);
-  textNumBufferDescriptor.usage =
-    wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst;
-  _textNumBuffer = _device.CreateBuffer(&textNumBufferDescriptor);
 }
 
 void Renderer::createTextPipeline(wgpu::TextureFormat format)
 {
-  std::array<wgpu::BindGroupLayoutEntry, 6> bindGroupLayoutEntries{};
+  std::array<wgpu::BindGroupLayoutEntry, 4> bindGroupLayoutEntries{};
   bindGroupLayoutEntries[0].binding = 0;
   bindGroupLayoutEntries[0].visibility = wgpu::ShaderStage::Vertex;
   bindGroupLayoutEntries[0].buffer.type =
@@ -249,15 +207,6 @@ void Renderer::createTextPipeline(wgpu::TextureFormat format)
   bindGroupLayoutEntries[3].visibility = wgpu::ShaderStage::Fragment;
   bindGroupLayoutEntries[3].sampler.type = wgpu::SamplerBindingType::Filtering;
 
-  bindGroupLayoutEntries[4].binding = 4;
-  bindGroupLayoutEntries[4].visibility = wgpu::ShaderStage::Vertex;
-  bindGroupLayoutEntries[4].buffer.type =
-    wgpu::BufferBindingType::ReadOnlyStorage;
-
-  bindGroupLayoutEntries[5].binding = 5;
-  bindGroupLayoutEntries[5].visibility = wgpu::ShaderStage::Vertex;
-  bindGroupLayoutEntries[5].buffer.type = wgpu::BufferBindingType::Uniform;
-
   wgpu::BindGroupLayoutDescriptor bindGroupLayoutDescriptor{};
   bindGroupLayoutDescriptor.label = "Renderer Text Bind Group Layout";
   bindGroupLayoutDescriptor.entryCount =
@@ -266,7 +215,7 @@ void Renderer::createTextPipeline(wgpu::TextureFormat format)
   auto bindGroupLayout =
     _device.CreateBindGroupLayout(&bindGroupLayoutDescriptor);
 
-  std::array<wgpu::BindGroupEntry, 6> bindGroupEntries{};
+  std::array<wgpu::BindGroupEntry, 4> bindGroupEntries{};
   bindGroupEntries[0].buffer = _textCharacterBuffer;
   bindGroupEntries[0].binding = 0;
 
@@ -281,12 +230,6 @@ void Renderer::createTextPipeline(wgpu::TextureFormat format)
 
   bindGroupEntries[3].sampler = _linearSampler;
   bindGroupEntries[3].binding = 3;
-
-  bindGroupEntries[4].buffer = _textReferenceBuffer;
-  bindGroupEntries[4].binding = 4;
-
-  bindGroupEntries[5].buffer = _textNumBuffer;
-  bindGroupEntries[5].binding = 5;
 
   wgpu::BindGroupDescriptor bindGroupDescriptor{};
   bindGroupDescriptor.label = "Renderer Text Bind Group";
@@ -316,32 +259,17 @@ void Renderer::createTextPipeline(wgpu::TextureFormat format)
 
     struct TextCharacter {
       bounds: vec4f,
+      color: vec3f,
       size: vec2f,
       position: vec2f,
-    };
-
-    struct TextUniform {
-      color: vec3f,
-      first: u32,
-      last: u32,
     };
 
     @group(0) @binding(0) var<storage, read> characters: array<TextCharacter>;
     @group(0) @binding(1) var<uniform> viewProjection: mat4x4<f32>;
     @group(0) @binding(2) var fontTexture: texture_2d<f32>;
     @group(0) @binding(3) var fontSampler: sampler;
-    @group(0) @binding(4) var<storage, read> textUniforms: array<TextUniform>;
-    @group(0) @binding(5) var<uniform> numUniforms: u32;
 
     @vertex fn vsMain(in: VertexInput) -> VertexOutput {
-      var textUniform: TextUniform;
-      for (var i = 0u; i < numUniforms; i++) {
-        textUniform = textUniforms[i];
-        if (in.instanceIndex >= textUniform.first && in.instanceIndex <= textUniform.last) {
-          break;
-        }
-      }
-
       var character = characters[in.instanceIndex];
 
       var vertexPosition = positions[in.vertexIndex];
@@ -360,7 +288,7 @@ void Renderer::createTextPipeline(wgpu::TextureFormat format)
       var out: VertexOutput;
       out.position = viewProjection * vec4f(vertexPosition, 0.0, 1.0);
       out.uv = uv;
-      out.color = textUniform.color;
+      out.color = character.color;
       return out;
     }
 

@@ -8,7 +8,22 @@ Text::Text(std::string_view text, const Font& font) : _text(text), _font(font)
 {
   updateCharacters();
 }
-void Text::SetText(std::string_view text)
+
+void Text::setColor(const glm::vec3& color)
+{
+  if (_color == color)
+  {
+    return;
+  }
+
+  _color = color;
+  for (auto& character : _characters)
+  {
+    character.color = color;
+  }
+}
+
+void Text::setText(std::string_view text)
 {
   if (_text == text)
   {
@@ -19,7 +34,7 @@ void Text::SetText(std::string_view text)
   updateCharacters();
 }
 
-void Text::SetFont(const Font& font)
+void Text::setFont(const Font& font)
 {
   if (&_font.get() == &font)
   {
@@ -57,6 +72,7 @@ void Text::updateCharacters()
     TextCharacter textChar{};
     textChar.bounds = fontChar.bounds;
     textChar.size = fontChar.size;
+    textChar.color = _color;
     textChar.position.x = cursor.x + fontChar.offset.x;
     textChar.position.y = cursor.y - fontChar.offset.y;
 
