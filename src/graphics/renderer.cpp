@@ -258,6 +258,7 @@ void Renderer::createTextPipeline(wgpu::TextureFormat format)
     };
 
     struct TextCharacter {
+      transform: mat4x4<f32>,
       bounds: vec4f,
       color: vec3f,
       size: vec2f,
@@ -286,7 +287,7 @@ void Renderer::createTextPipeline(wgpu::TextureFormat format)
       var uv = uvs[in.vertexIndex];
 
       var out: VertexOutput;
-      out.position = viewProjection * vec4f(vertexPosition, 0.0, 1.0);
+      out.position = viewProjection * character.transform * vec4f(vertexPosition, 0.0, 1.0);
       out.uv = uv;
       out.color = character.color;
       return out;

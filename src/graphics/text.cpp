@@ -23,6 +23,39 @@ void Text::setColor(const glm::vec3& color)
   }
 }
 
+void Text::setPosition(const glm::vec3& position)
+{
+  if (_position == position)
+  {
+    return;
+  }
+
+  _position = position;
+  recalculateTransform();
+}
+
+void Text::setRotation(const glm::quat& rotation)
+{
+  if (_rotation == rotation)
+  {
+    return;
+  }
+
+  _rotation = rotation;
+  recalculateTransform();
+}
+
+void Text::setScale(const glm::vec3& scale)
+{
+  if (_scale == scale)
+  {
+    return;
+  }
+
+  _scale = scale;
+  recalculateTransform();
+}
+
 void Text::setText(std::string_view text)
 {
   if (_text == text)
@@ -90,6 +123,18 @@ void Text::updateCharacters()
     _characters.emplace_back(textChar);
 
     cursor.x += fontChar.advance;
+  }
+}
+
+void Text::recalculateTransform()
+{
+  _transform = glm::translate(glm::mat4(1.0f), _position);
+  _transform *= glm::mat4_cast(_rotation);
+  _transform = glm::scale(_transform, _scale);
+
+  for (auto& character : _characters)
+  {
+    character.transform = _transform;
   }
 }
 }  // namespace graphics

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <functional>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include <string>
 
 #include "font.h"
@@ -9,6 +11,7 @@ namespace graphics
 {
 struct TextCharacter
 {
+  alignas(16) glm::mat4 transform;
   alignas(16) FontUVBounds bounds;
   alignas(16) glm::vec3 color;
   alignas(8) glm::vec2 size;
@@ -26,6 +29,24 @@ class Text
     return _color;
   }
   void setColor(const glm::vec3& color);
+
+  const glm::vec3& position() const
+  {
+    return _position;
+  }
+  void setPosition(const glm::vec3& position);
+
+  const glm::quat& rotation() const
+  {
+    return _rotation;
+  }
+  void setRotation(const glm::quat& rotation);
+
+  const glm::vec3& scale() const
+  {
+    return _scale;
+  }
+  void setScale(const glm::vec3& scale);
 
   const std::string& text() const
   {
@@ -57,8 +78,15 @@ class Text
  private:
   void updateCharacters();
 
+  void recalculateTransform();
+
  private:
+  glm::mat4 _transform{1.0f};
   glm::vec3 _color{1.0f};
+
+  glm::vec3 _position{0.0f};
+  glm::quat _rotation{1.0f, 0.0f, 0.0f, 0.0f};
+  glm::vec3 _scale{1.0f};
 
   std::string _text;
   std::reference_wrapper<const Font> _font;
