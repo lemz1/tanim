@@ -9,6 +9,13 @@
 
 namespace graphics
 {
+enum class TextAlignment
+{
+  Left,
+  Centered,
+  Right,
+};
+
 struct TextCharacter
 {
   alignas(16) glm::mat4 transform;
@@ -23,6 +30,12 @@ class Text
  public:
   Text(std::string_view text, const Font& font);
   ~Text() = default;
+
+  TextAlignment alignment() const
+  {
+    return _alignment;
+  }
+  void setAlignment(TextAlignment alignment);
 
   const glm::vec3& color() const
   {
@@ -78,9 +91,14 @@ class Text
  private:
   void updateCharacters();
 
+  void recalculateOrigin();
+
   void recalculateTransform();
 
  private:
+  TextAlignment _alignment = TextAlignment::Left;
+  glm::vec3 _origin{0.0f};
+
   glm::mat4 _transform{1.0f};
   glm::vec3 _color{1.0f};
 

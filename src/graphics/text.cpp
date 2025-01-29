@@ -9,6 +9,18 @@ Text::Text(std::string_view text, const Font& font) : _text(text), _font(font)
   updateCharacters();
 }
 
+void Text::setAlignment(TextAlignment alignment)
+{
+  if (_alignment == alignment)
+  {
+    return;
+  }
+
+  _alignment = alignment;
+  recalculateOrigin();
+  recalculateTransform();
+}
+
 void Text::setColor(const glm::vec3& color)
 {
   if (_color == color)
@@ -124,6 +136,29 @@ void Text::updateCharacters()
 
     cursor.x += fontChar.advance;
   }
+
+  recalculateOrigin();
+  recalculateTransform();
+}
+
+void Text::recalculateOrigin()
+{
+  float originY = _font.get().lineHeight() * scalingFactor / 2.0f;
+
+  switch (_alignment)
+  {
+    case TextAlignment::Left:
+      _origin = glm::vec3(0.0f, originY, 0.0f);
+      break;
+
+    case TextAlignment::Centered:
+      _origin = glm::vec3(-_width / 2.0f, originY, 0.0f);
+      break;
+
+    case TextAlignment::Right:
+      _origin = glm::vec3(-_width, originY, 0.0f);
+      break;
+  }
 }
 
 void Text::recalculateTransform()
@@ -134,7 +169,7 @@ void Text::recalculateTransform()
 
   for (auto& character : _characters)
   {
-    character.transform = _transform;
+    character.transform = _transform * glm::translate(glm::mat4(1.0f), _origin);
   }
 }
 }  // namespace graphics

@@ -157,11 +157,11 @@ int main()
   auto& font = renderer.font("assets/fonts/ARIALBD.TTF-msdf");
 
   auto text = graphics::Text("Hello, World!", font);
-  text.setPosition(glm::vec3(-text.width() / 2.0f, text.height() / 2.0f, 0.0f));
+  text.setAlignment(graphics::TextAlignment::Centered);
 
   auto camera = graphics::Camera();
 
-  float time = 0.0;
+  float time = 0.0f;
 
   while (!glfwWindowShouldClose(window))
   {
@@ -170,10 +170,6 @@ int main()
     float newTime = (float)glfwGetTime();
     float deltaTime = newTime - time;
     time = newTime;
-
-    text.setPosition(
-      glm::vec3(-text.width() / 2.0f, text.height() / 2.0f + sinf(time), 0.0f)
-    );
 
     wgpu::SurfaceTexture surfaceTexture;
     surface.GetCurrentTexture(&surfaceTexture);
