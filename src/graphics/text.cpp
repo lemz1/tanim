@@ -18,6 +18,7 @@ void Text::setAlignment(TextAlignment alignment)
 
   _alignment = alignment;
   recalculateOrigin();
+  recalculateAlignment();
 }
 
 void Text::setColor(const glm::vec3& color)
@@ -117,6 +118,7 @@ void Text::updateCharacters()
   }
 
   recalculateOrigin();
+  recalculateAlignment();
 }
 
 void Text::recalculateOrigin()
@@ -126,19 +128,42 @@ void Text::recalculateOrigin()
   switch (_alignment)
   {
     case TextAlignment::Left:
-      transform.setPosition(glm::vec3(0.0f, halfLineHeight, 0.0f));
       transform.setOrigin(glm::vec3(0.0f, -halfLineHeight, 0.0f));
       break;
 
     case TextAlignment::Centered:
-      transform.setPosition(glm::vec3(-_width / 2.0f, halfLineHeight, 0.0f));
       transform.setOrigin(glm::vec3(_width / 2.0f, -halfLineHeight, 0.0f));
       break;
 
     case TextAlignment::Right:
-      transform.setPosition(glm::vec3(-_width, halfLineHeight, 0.0f));
       transform.setOrigin(glm::vec3(_width, -halfLineHeight, 0.0f));
       break;
+  }
+}
+
+void Text::recalculateAlignment()
+{
+  glm::vec2 offset{0.0f};
+  float halfLineHeight = _font.get().lineHeight() * scalingFactor / 2.0f;
+
+  switch (_alignment)
+  {
+    case TextAlignment::Left:
+      offset = glm::vec2(0.0f, halfLineHeight);
+      break;
+
+    case TextAlignment::Centered:
+      offset = glm::vec2(-_width / 2.0f, halfLineHeight);
+      break;
+
+    case TextAlignment::Right:
+      offset = glm::vec2(-_width, halfLineHeight);
+      break;
+  }
+
+  for (auto& character : _characters)
+  {
+    character._offset = offset;
   }
 }
 }  // namespace graphics

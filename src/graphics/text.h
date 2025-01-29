@@ -24,6 +24,7 @@ class TextCharacter
   const TextCharacterGPU& data()
   {
     _data.transform = transform.matrix();
+    _data.transform = glm::translate(_data.transform, glm::vec3(_offset, 0.0f));
     return _data;
   }
 
@@ -32,6 +33,8 @@ class TextCharacter
 
  private:
   TextCharacterGPU _data;
+
+  glm::vec2 _offset{0.0f};
 
   friend class Text;
 };
@@ -98,6 +101,8 @@ class Text
   void updateCharacters();
 
   void recalculateOrigin();
+
+  void recalculateAlignment();
 
  private:
   TextAlignment _alignment = TextAlignment::Left;
