@@ -27,6 +27,7 @@ set(TANIM_SOURCES
   ${TANIM_DIR}/src/graphics/font.cpp
   ${TANIM_DIR}/src/graphics/text.cpp
   ${TANIM_DIR}/src/graphics/camera.cpp
+  ${TANIM_DIR}/src/util/transform.cpp
 )
 
 if (APPLE)
@@ -39,6 +40,8 @@ set(TANIM_HEADERS
   ${TANIM_DIR}/src/graphics/font.h
   ${TANIM_DIR}/src/graphics/text.h
   ${TANIM_DIR}/src/graphics/camera.h
+  ${TANIM_DIR}/src/util/vector.h
+  ${TANIM_DIR}/src/util/transform.h
 )
 
 if (WIN32)

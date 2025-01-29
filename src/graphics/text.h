@@ -5,7 +5,9 @@
 #include <glm/gtx/quaternion.hpp>
 #include <string>
 
-#include "font.h"
+#include "graphics/font.h"
+#include "graphics/gpu_types.h"
+#include "util/transform.h"
 
 namespace graphics
 {
@@ -16,13 +18,22 @@ enum class TextAlignment
   Right,
 };
 
-struct TextCharacter
+class TextCharacter
 {
-  alignas(16) glm::mat4 transform;
-  alignas(16) FontUVBounds bounds;
-  alignas(16) glm::vec3 color;
-  alignas(8) glm::vec2 size;
-  alignas(8) glm::vec2 position;
+ public:
+  const TextCharacterGPU& data()
+  {
+    _data.transform = transform.matrix();
+    return _data;
+  }
+
+ public:
+  util::Transform transform;
+
+ private:
+  TextCharacterGPU _data;
+
+  friend class Text;
 };
 
 class Text
@@ -43,24 +54,6 @@ class Text
   }
   void setColor(const glm::vec3& color);
 
-  const glm::vec3& position() const
-  {
-    return _position;
-  }
-  void setPosition(const glm::vec3& position);
-
-  const glm::quat& rotation() const
-  {
-    return _rotation;
-  }
-  void setRotation(const glm::quat& rotation);
-
-  const glm::vec3& scale() const
-  {
-    return _scale;
-  }
-  void setScale(const glm::vec3& scale);
-
   const std::string& text() const
   {
     return _text;
@@ -78,6 +71,16 @@ class Text
     return _characters;
   }
 
+  const TextCharacter& character(size_t index) const
+  {
+    return _characters.at(index);
+  }
+
+  TextCharacter& character(size_t index)
+  {
+    return _characters.at(index);
+  }
+
   float width() const
   {
     return _width;
@@ -88,23 +91,18 @@ class Text
     return _height;
   }
 
+ public:
+  util::Transform transform;
+
  private:
   void updateCharacters();
 
   void recalculateOrigin();
 
-  void recalculateTransform();
-
  private:
   TextAlignment _alignment = TextAlignment::Left;
-  glm::vec3 _origin{0.0f};
 
-  glm::mat4 _transform{1.0f};
   glm::vec3 _color{1.0f};
-
-  glm::vec3 _position{0.0f};
-  glm::quat _rotation{1.0f, 0.0f, 0.0f, 0.0f};
-  glm::vec3 _scale{1.0f};
 
   std::string _text;
   std::reference_wrapper<const Font> _font;
@@ -112,5 +110,7 @@ class Text
   std::vector<TextCharacter> _characters;
   float _width;
   float _height;
+
+  friend class Renderer;
 };
 }  // namespace graphics

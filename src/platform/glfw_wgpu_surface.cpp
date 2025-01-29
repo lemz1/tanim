@@ -1,6 +1,7 @@
 #include "glfw_wgpu_surface.h"
 
 #include <cassert>
+#include <iostream>
 
 #ifdef _GLFW_WIN32
 #define GLFW_EXPOSE_NATIVE_WIN32

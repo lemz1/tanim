@@ -1,6 +1,8 @@
 #include "renderer.h"
 
+#include <chrono>
 #include <fstream>
+#include <iostream>
 
 namespace graphics
 {
@@ -12,7 +14,7 @@ struct Vertex
 
 constexpr size_t vertexBufferSize = 1000 * sizeof(Vertex);
 constexpr size_t indexBufferSize = vertexBufferSize * 2;
-constexpr size_t textCharacterBufferSize = 2048 * sizeof(TextCharacter);
+constexpr size_t textCharacterCount = 2048;
 
 Renderer::Renderer(
   const wgpu::Device& device,
@@ -75,7 +77,7 @@ void Renderer::drawQuad(float x, float y)
   _indexValueOffset += 4;
 }
 
-void Renderer::drawText(const Text& text, const Camera& camera)
+void Renderer::drawText(Text& text, const Camera& camera)
 {
   _queue.WriteBuffer(
     _textUniformBuffer,
@@ -84,19 +86,21 @@ void Renderer::drawText(const Text& text, const Camera& camera)
     sizeof(glm::mat4)
   );
 
-  _queue.WriteBuffer(
-    _textCharacterBuffer,
-    _textCharacterBufferOffset,
-    text.characters().data(),
-    text.characters().size() * sizeof(TextCharacter)
-  );
-
-  _textCharacterBufferOffset +=
-    text.characters().size() * sizeof(TextCharacter);
+  for (auto& character : text._characters)
+  {
+    _textCharacterData.emplace_back(character.data());
+  }
 }
 
 void Renderer::flush(const wgpu::TextureView& view)
 {
+  _queue.WriteBuffer(
+    _textCharacterBuffer,
+    0,
+    _textCharacterData.data(),
+    _textCharacterData.size() * sizeof(TextCharacterGPU)
+  );
+
   wgpu::CommandEncoderDescriptor encoderDescriptor{};
   encoderDescriptor.label = "Renderer Command Encoder";
   auto encoder = _device.CreateCommandEncoder(&encoderDescriptor);
@@ -116,12 +120,7 @@ void Renderer::flush(const wgpu::TextureView& view)
   auto renderPass = encoder.BeginRenderPass(&renderPassDescriptor);
   renderPass.SetPipeline(_textPipeline);
   renderPass.SetBindGroup(0, _textBindGroup);
-  renderPass.Draw(
-    4,
-    (uint32_t)(_textCharacterBufferOffset / sizeof(TextCharacter)),
-    0,
-    0
-  );
+  renderPass.Draw(4, (uint32_t)_textCharacterData.size(), 0, 0);
   renderPass.End();
 
   wgpu::CommandBufferDescriptor commandDescriptor{};
@@ -130,7 +129,7 @@ void Renderer::flush(const wgpu::TextureView& view)
 
   _queue.Submit(1, &command);
 
-  _textCharacterBufferOffset = 0;
+  _textCharacterData.clear();
   _vertexBufferOffset = 0;
   _indexBufferOffset = 0;
   _indexValueOffset = 0;
@@ -170,9 +169,12 @@ void Renderer::createSamplers()
 
 void Renderer::createTextBuffers()
 {
+  _textCharacterData.reserve(textCharacterCount);
+
   wgpu::BufferDescriptor textCharacterBufferDescriptor{};
   textCharacterBufferDescriptor.label = "Renderer Text Character Buffer";
-  textCharacterBufferDescriptor.size = textCharacterBufferSize;
+  textCharacterBufferDescriptor.size =
+    textCharacterCount * sizeof(TextCharacterGPU);
   textCharacterBufferDescriptor.usage =
     wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst;
   _textCharacterBuffer = _device.CreateBuffer(&textCharacterBufferDescriptor);

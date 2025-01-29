@@ -6,9 +6,10 @@
 #include <filesystem>
 #include <glm/glm.hpp>
 
-#include "camera.h"
-#include "font.h"
-#include "text.h"
+#include "graphics/camera.h"
+#include "graphics/font.h"
+#include "graphics/gpu_types.h"
+#include "graphics/text.h"
 
 namespace graphics
 {
@@ -24,7 +25,7 @@ class Renderer
 
   void drawQuad(float x, float y);
 
-  void drawText(const Text& text, const Camera& camera);
+  void drawText(Text& text, const Camera& camera);
 
   void flush(const wgpu::TextureView& view);
 
@@ -56,9 +57,9 @@ class Renderer
   wgpu::Sampler _linearSampler;
   wgpu::Sampler _nearestSampler;
 
+  std::vector<TextCharacterGPU> _textCharacterData;
   wgpu::Buffer _textCharacterBuffer;
   wgpu::Buffer _textUniformBuffer;
-  size_t _textCharacterBufferOffset = 0;
   wgpu::BindGroup _textBindGroup;
   wgpu::RenderPipeline _textPipeline;
 

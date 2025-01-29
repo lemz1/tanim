@@ -3,8 +3,6 @@
 #include <GLFW/glfw3.h>
 #include <webgpu/webgpu_cpp.h>
 
-#include <iostream>
-
 namespace platform
 {
 wgpu::Surface

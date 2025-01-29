@@ -18,7 +18,6 @@ void Text::setAlignment(TextAlignment alignment)
 
   _alignment = alignment;
   recalculateOrigin();
-  recalculateTransform();
 }
 
 void Text::setColor(const glm::vec3& color)
@@ -31,41 +30,8 @@ void Text::setColor(const glm::vec3& color)
   _color = color;
   for (auto& character : _characters)
   {
-    character.color = color;
+    character._data.color = color;
   }
-}
-
-void Text::setPosition(const glm::vec3& position)
-{
-  if (_position == position)
-  {
-    return;
-  }
-
-  _position = position;
-  recalculateTransform();
-}
-
-void Text::setRotation(const glm::quat& rotation)
-{
-  if (_rotation == rotation)
-  {
-    return;
-  }
-
-  _rotation = rotation;
-  recalculateTransform();
-}
-
-void Text::setScale(const glm::vec3& scale)
-{
-  if (_scale == scale)
-  {
-    return;
-  }
-
-  _scale = scale;
-  recalculateTransform();
 }
 
 void Text::setText(std::string_view text)
@@ -114,62 +80,65 @@ void Text::updateCharacters()
 
     auto& fontChar = _font.get().character(_text.at(i));
 
-    TextCharacter textChar{};
-    textChar.bounds = fontChar.bounds;
-    textChar.size = fontChar.size;
-    textChar.color = _color;
-    textChar.position.x = cursor.x + fontChar.offset.x;
-    textChar.position.y = cursor.y - fontChar.offset.y;
+    auto& textChar = _characters.emplace_back();
+    textChar.transform.setParent(&transform);
+    textChar._data.bounds = glm::vec4(
+      fontChar.bounds.left,
+      fontChar.bounds.right,
+      fontChar.bounds.top,
+      fontChar.bounds.bottom
+    );
+    textChar._data.size = fontChar.size;
+    textChar._data.color = _color;
+    textChar._data.position.x = cursor.x + fontChar.offset.x;
+    textChar._data.position.y = cursor.y - fontChar.offset.y;
 
     if (i > 0)
     {
-      textChar.position.x += _font.get().kerning(_text.at(i - 1), _text.at(i));
+      textChar._data.position.x +=
+        _font.get().kerning(_text.at(i - 1), _text.at(i));
     }
 
-    textChar.size *= scalingFactor;
-    textChar.position *= scalingFactor;
+    textChar._data.size *= scalingFactor;
+    textChar._data.position *= scalingFactor;
 
-    _width = std::max(_width, textChar.position.x + textChar.size.x);
-    _height = std::max(_height, -textChar.position.y + textChar.size.y);
+    textChar.transform.setOrigin(glm::vec3(
+      textChar._data.position.x + textChar._data.size.x / 2.0f,
+      textChar._data.position.y - textChar._data.size.y / 2.0f,
+      0.0f
+    ));
 
-    _characters.emplace_back(textChar);
+    _width =
+      std::max(_width, textChar._data.position.x + textChar._data.size.x);
+    _height =
+      std::max(_height, -textChar._data.position.y + textChar._data.size.y);
 
     cursor.x += fontChar.advance;
   }
 
   recalculateOrigin();
-  recalculateTransform();
 }
 
 void Text::recalculateOrigin()
 {
-  float originY = _font.get().lineHeight() * scalingFactor / 2.0f;
+  float halfLineHeight = _font.get().lineHeight() * scalingFactor / 2.0f;
 
   switch (_alignment)
   {
     case TextAlignment::Left:
-      _origin = glm::vec3(0.0f, originY, 0.0f);
+      transform.setPosition(glm::vec3(0.0f, halfLineHeight, 0.0f));
+      transform.setOrigin(glm::vec3(0.0f, -halfLineHeight, 0.0f));
       break;
 
     case TextAlignment::Centered:
-      _origin = glm::vec3(-_width / 2.0f, originY, 0.0f);
+      transform.setPosition(glm::vec3(-_width / 2.0f, halfLineHeight, 0.0f));
+      transform.setOrigin(glm::vec3(_width / 2.0f, -halfLineHeight, 0.0f));
       break;
 
     case TextAlignment::Right:
-      _origin = glm::vec3(-_width, originY, 0.0f);
+      transform.setPosition(glm::vec3(-_width, halfLineHeight, 0.0f));
+      transform.setOrigin(glm::vec3(_width, -halfLineHeight, 0.0f));
       break;
-  }
-}
-
-void Text::recalculateTransform()
-{
-  _transform = glm::translate(glm::mat4(1.0f), _position);
-  _transform *= glm::mat4_cast(_rotation);
-  _transform = glm::scale(_transform, _scale);
-
-  for (auto& character : _characters)
-  {
-    character.transform = _transform * glm::translate(glm::mat4(1.0f), _origin);
   }
 }
 }  // namespace graphics
