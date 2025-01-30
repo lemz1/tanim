@@ -59,7 +59,6 @@ class Renderer
   wgpu::Buffer _textUniformBuffer;
   wgpu::BindGroup _textBindGroup;
   wgpu::RenderPipeline _textPipeline;
-  wgpu::RenderPipeline _textGlowPipeline;
 
   std::unordered_map<std::filesystem::path, graphics::Font> _fonts;
 
