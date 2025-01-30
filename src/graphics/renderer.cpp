@@ -208,21 +208,22 @@ void Renderer::createTextPipeline(wgpu::TextureFormat format)
     @group(0) @binding(2) var fontTexture: texture_2d<f32>;
     @group(0) @binding(3) var fontSampler: sampler;
 
-    @vertex fn vsMain(in: VertexInput) -> VertexOutput {
-      var character = characters[in.instanceIndex];
+    @vertex 
+    fn vsMain(in: VertexInput) -> VertexOutput {
+      let character = characters[in.instanceIndex];
 
       var vertexPosition = positions[in.vertexIndex];
       vertexPosition *= character.size;
       vertexPosition += character.position;
 
-      var uvs = array<vec2f, 4>(
+      let uvs = array<vec2f, 4>(
         character.bounds.xz,
         character.bounds.yz,
         character.bounds.xw,
         character.bounds.yw
       );
 
-      var uv = uvs[in.vertexIndex];
+      let uv = uvs[in.vertexIndex];
 
       var out: VertexOutput;
       out.position = viewProjection * character.transform * vec4f(vertexPosition, 0.0, 1.0);
@@ -236,7 +237,8 @@ void Renderer::createTextPipeline(wgpu::TextureFormat format)
       return max(min(c.r, c.g), min(max(c.r, c.g), c.b));
     }
 
-    @fragment fn fsMain(in: VertexOutput) -> @location(0) vec4f {
+    @fragment 
+    fn fsMain(in: VertexOutput) -> @location(0) vec4f {
       let pxRange = 4.0;
       let sz = vec2f(textureDimensions(fontTexture, 0));
       let dx = sz.x*length(vec2f(dpdxFine(in.uv.x), dpdyFine(in.uv.x)));
@@ -296,6 +298,106 @@ void Renderer::createTextPipeline(wgpu::TextureFormat format)
     wgpu::PrimitiveTopology::TriangleStrip;
   pipelineDescriptor.layout = pipelineLayout;
   _textPipeline = _device.CreateRenderPipeline(&pipelineDescriptor);
+
+  // still needs to be adjusted to actually do a glow
+  const char* glowShaderCode = R"(
+    const positions = array<vec2f, 4>(
+      vec2f(0.0, 0.0),
+      vec2f(1.0, 0.0),
+      vec2f(0.0, -1.0),
+      vec2f(1.0, -1.0)
+    );
+
+    struct VertexInput {
+      @builtin(vertex_index) vertexIndex: u32,
+      @builtin(instance_index) instanceIndex: u32,
+    };
+
+    struct VertexOutput {
+      @builtin(position) position: vec4f,
+      @location(0) uv: vec2f,
+      @location(1) color: vec3f,
+    };
+
+    struct TextCharacter {
+      transform: mat4x4<f32>,
+      bounds: vec4f,
+      color: vec3f,
+      size: vec2f,
+      position: vec2f,
+    };
+
+    @group(0) @binding(0) var<storage, read> characters: array<TextCharacter>;
+    @group(0) @binding(1) var<uniform> viewProjection: mat4x4<f32>;
+    @group(0) @binding(2) var fontTexture: texture_2d<f32>;
+    @group(0) @binding(3) var fontSampler: sampler;
+
+    @vertex 
+    fn vsMain(in: VertexInput) -> VertexOutput {
+      let character = characters[in.instanceIndex];
+
+      var vertexPosition = positions[in.vertexIndex];
+      vertexPosition *= character.size;
+      vertexPosition += character.position;
+
+      let uvs = array<vec2f, 4>(
+        character.bounds.xz,
+        character.bounds.yz,
+        character.bounds.xw,
+        character.bounds.yw
+      );
+
+      let uv = uvs[in.vertexIndex];
+
+      var out: VertexOutput;
+      out.position = viewProjection * character.transform * vec4f(vertexPosition, 0.0, 1.0);
+      out.uv = uv;
+      out.color = character.color;
+      return out;
+    }
+
+    fn sampleMsdf(uv: vec2f) -> f32 {
+      let c = textureSample(fontTexture, fontSampler, uv);
+      return max(min(c.r, c.g), min(max(c.r, c.g), c.b));
+    }
+
+    @fragment 
+    fn fsMain(in: VertexOutput) -> @location(0) vec4f {
+      let pxRange = 4.0;
+      let sz = vec2f(textureDimensions(fontTexture, 0));
+      let dx = sz.x*length(vec2f(dpdxFine(in.uv.x), dpdyFine(in.uv.x)));
+      let dy = sz.y*length(vec2f(dpdxFine(in.uv.y), dpdyFine(in.uv.y)));
+      let toPixels = pxRange * inverseSqrt(dx * dx + dy * dy);
+      let sigDist = sampleMsdf(in.uv) - 0.25;
+      let pxDist = sigDist * toPixels;
+
+      let edgeWidth = 0.5;
+
+      let alpha = smoothstep(-edgeWidth, edgeWidth, pxDist);
+
+      return vec4f(in.color, alpha);
+    }
+)";
+
+  wgpu::ShaderModuleWGSLDescriptor glowWGSLDescriptor{};
+  glowWGSLDescriptor.code = shaderCode;
+  glowWGSLDescriptor.sType = wgpu::SType::ShaderSourceWGSL;
+
+  wgpu::ShaderModuleDescriptor glowShaderModuleDescriptor{};
+  glowShaderModuleDescriptor.label = "Renderer Shader Module";
+  glowShaderModuleDescriptor.nextInChain = &glowWGSLDescriptor;
+
+  wgpu::ShaderModule glowShaderModule =
+    _device.CreateShaderModule(&glowShaderModuleDescriptor);
+
+  wgpu::RenderPipelineDescriptor glowPipelineDescriptor{};
+  glowPipelineDescriptor.label = "Renderer Text Glow Pipeline";
+  glowPipelineDescriptor.fragment = &fragmentState;
+  glowPipelineDescriptor.vertex.module = glowShaderModule;
+  glowPipelineDescriptor.primitive.topology =
+    wgpu::PrimitiveTopology::TriangleStrip;
+  glowPipelineDescriptor.layout = pipelineLayout;
+  _textGlowPipeline = _device.CreateRenderPipeline(&glowPipelineDescriptor);
 }
 
 void Renderer::flushText(const wgpu::RenderPassEncoder& renderPass)
