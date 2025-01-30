@@ -6,14 +6,6 @@
 
 namespace graphics
 {
-struct Vertex
-{
-  glm::vec3 position;
-  glm::vec2 uv;
-};
-
-constexpr size_t vertexBufferSize = 1000 * sizeof(Vertex);
-constexpr size_t indexBufferSize = vertexBufferSize * 2;
 constexpr size_t textCharacterCount = 2048;
 
 Renderer::Renderer(
@@ -26,55 +18,6 @@ Renderer::Renderer(
   createSamplers();
   createTextBuffers();
   createTextPipeline(format);
-  createDrawBuffers();
-}
-
-void Renderer::drawQuad(float x, float y)
-{
-  std::vector<Vertex> vertices = {
-    {
-      {-0.5f + x, -0.5f + y, +0.0f},
-      {+0.0f, +1.0f},
-    },
-    {
-      {+0.5f + x, -0.5f + y, +0.0f},
-      {+1.0f, +1.0f},
-    },
-    {
-      {-0.5f + x, +0.5f + y, +0.0f},
-      {+0.0f, +0.0f},
-    },
-    {
-      {+0.5f + x, +0.5f + y, +0.0f},
-      {+1.0f, +0.0f},
-    },
-  };
-  _queue.WriteBuffer(
-    _vertexBuffer,
-    _vertexBufferOffset,
-    vertices.data(),
-    vertices.size() * sizeof(Vertex)
-  );
-
-  std::vector<uint32_t> indices = {
-    0 + _indexValueOffset,
-    1 + _indexValueOffset,
-    2 + _indexValueOffset,
-    1 + _indexValueOffset,
-    3 + _indexValueOffset,
-    2 + _indexValueOffset
-  };
-
-  _queue.WriteBuffer(
-    _indexBuffer,
-    _indexBufferOffset,
-    indices.data(),
-    indices.size() * sizeof(uint32_t)
-  );
-
-  _vertexBufferOffset += vertices.size() * sizeof(Vertex);
-  _indexBufferOffset += indices.size() * sizeof(uint32_t);
-  _indexValueOffset += 4;
 }
 
 void Renderer::drawText(Text& text, const Camera& camera)
@@ -118,9 +61,7 @@ void Renderer::flush(const wgpu::TextureView& view)
   renderPassDescriptor.colorAttachments = &colorAttachment;
 
   auto renderPass = encoder.BeginRenderPass(&renderPassDescriptor);
-  renderPass.SetPipeline(_textPipeline);
-  renderPass.SetBindGroup(0, _textBindGroup);
-  renderPass.Draw(4, (uint32_t)_textCharacterData.size(), 0, 0);
+  flushText(renderPass);
   renderPass.End();
 
   wgpu::CommandBufferDescriptor commandDescriptor{};
@@ -128,11 +69,6 @@ void Renderer::flush(const wgpu::TextureView& view)
   auto command = encoder.Finish(&commandDescriptor);
 
   _queue.Submit(1, &command);
-
-  _textCharacterData.clear();
-  _vertexBufferOffset = 0;
-  _indexBufferOffset = 0;
-  _indexValueOffset = 0;
 }
 
 const graphics::Font& Renderer::font(const std::filesystem::path& path)
@@ -362,20 +298,12 @@ void Renderer::createTextPipeline(wgpu::TextureFormat format)
   _textPipeline = _device.CreateRenderPipeline(&pipelineDescriptor);
 }
 
-void Renderer::createDrawBuffers()
+void Renderer::flushText(const wgpu::RenderPassEncoder& renderPass)
 {
-  wgpu::BufferDescriptor vertexBufferDescriptor{};
-  vertexBufferDescriptor.label = "Renderer Vertex Buffer";
-  vertexBufferDescriptor.size = vertexBufferSize;
-  vertexBufferDescriptor.usage =
-    wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst;
-  _vertexBuffer = _device.CreateBuffer(&vertexBufferDescriptor);
+  renderPass.SetPipeline(_textPipeline);
+  renderPass.SetBindGroup(0, _textBindGroup);
+  renderPass.Draw(4, (uint32_t)_textCharacterData.size(), 0, 0);
 
-  wgpu::BufferDescriptor indexBufferDescriptor{};
-  indexBufferDescriptor.label = "Renderer Index Buffer";
-  indexBufferDescriptor.size = indexBufferSize;
-  indexBufferDescriptor.usage =
-    wgpu::BufferUsage::Index | wgpu::BufferUsage::CopyDst;
-  _indexBuffer = _device.CreateBuffer(&indexBufferDescriptor);
+  _textCharacterData.clear();
 }
 }  // namespace graphics

@@ -23,8 +23,6 @@ class Renderer
   );
   ~Renderer() = default;
 
-  void drawQuad(float x, float y);
-
   void drawText(Text& text, const Camera& camera);
 
   void flush(const wgpu::TextureView& view);
@@ -50,8 +48,7 @@ class Renderer
 
   void createTextBuffers();
   void createTextPipeline(wgpu::TextureFormat format);
-
-  void createDrawBuffers();
+  void flushText(const wgpu::RenderPassEncoder& renderPass);
 
  private:
   wgpu::Sampler _linearSampler;
@@ -62,14 +59,6 @@ class Renderer
   wgpu::Buffer _textUniformBuffer;
   wgpu::BindGroup _textBindGroup;
   wgpu::RenderPipeline _textPipeline;
-
-  std::array<wgpu::VertexAttribute, 2> _vertexAttributes;
-  wgpu::Buffer _vertexBuffer;
-  wgpu::Buffer _indexBuffer;
-
-  size_t _vertexBufferOffset = 0;
-  size_t _indexBufferOffset = 0;
-  uint32_t _indexValueOffset = 0;
 
   std::unordered_map<std::filesystem::path, graphics::Font> _fonts;
 
